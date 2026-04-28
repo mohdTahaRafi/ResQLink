@@ -1,4 +1,4 @@
-# samaj_mobile
+# resqlink_mobile
 
 A new Flutter project.
 

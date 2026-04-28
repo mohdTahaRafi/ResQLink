@@ -7,7 +7,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.samaj_mobile"
+    namespace = "com.example.resqlink_mobile"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -21,7 +21,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.samaj_mobile"
+        applicationId = "com.example.resqlink_mobile"
         minSdk = 23
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode

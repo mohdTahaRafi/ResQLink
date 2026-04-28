@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"cloud.google.com/go/firestore"
-	"github.com/samaj-project/samaj/internal/ai"
-	"github.com/samaj-project/samaj/internal/domain"
-	"github.com/samaj-project/samaj/internal/repository"
+	"github.com/resqlink-project/resqlink/internal/ai"
+	"github.com/resqlink-project/resqlink/internal/domain"
+	"github.com/resqlink-project/resqlink/internal/repository"
 )
 
 // IngestionService orchestrates the AI extraction and urgency scoring pipeline.

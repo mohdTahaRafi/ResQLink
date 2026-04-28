@@ -27,21 +27,21 @@ void main() async {
   await Hive.initFlutter();
   await HiveStore.init();
 
-  runApp(const ProviderScope(child: SamajApp()));
+  runApp(const ProviderScope(child: ResQLinkApp()));
 }
 
-class SamajApp extends ConsumerWidget {
-  const SamajApp({super.key});
+class ResQLinkApp extends ConsumerWidget {
+  const ResQLinkApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
 
     return MaterialApp.router(
-      title: 'SAMAJ',
+      title: 'RESQLINK',
       debugShowCheckedModeBanner: false,
-      theme: SamajTheme.light(),
-      darkTheme: SamajTheme.dark(),
+      theme: ResQLinkTheme.light(),
+      darkTheme: ResQLinkTheme.dark(),
       themeMode: ThemeMode.system,
       routerConfig: router,
     );

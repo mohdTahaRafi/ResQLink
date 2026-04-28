@@ -1,4 +1,4 @@
-name: SAMAJ CI/CD
+name: RESQLINK CI/CD
 
 on:
   push:
@@ -9,9 +9,9 @@ on:
 env:
   GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
   GCP_REGION: asia-south1
-  AR_REGISTRY: ${{ secrets.GCP_PROJECT_ID }}/samaj
-  API_IMAGE: samaj-api
-  WORKER_IMAGE: samaj-worker
+  AR_REGISTRY: ${{ secrets.GCP_PROJECT_ID }}/resqlink
+  API_IMAGE: resqlink-api
+  WORKER_IMAGE: resqlink-worker
 
 jobs:
   lint-and-test:
@@ -87,7 +87,7 @@ jobs:
 
       - uses: google-github-actions/deploy-cloudrun@v2
         with:
-          service: samaj-api
+          service: resqlink-api
           region: ${{ env.GCP_REGION }}
           image: ${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.AR_REGISTRY }}/${{ env.API_IMAGE }}:${{ github.sha }}
           flags: '--allow-unauthenticated --min-instances=0 --max-instances=3 --memory=256Mi --cpu=1'
@@ -110,7 +110,7 @@ jobs:
 
       - uses: google-github-actions/deploy-cloudrun@v2
         with:
-          service: samaj-worker
+          service: resqlink-worker
           region: ${{ env.GCP_REGION }}
           image: ${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.AR_REGISTRY }}/${{ env.WORKER_IMAGE }}:${{ github.sha }}
           flags: '--no-allow-unauthenticated --min-instances=0 --max-instances=2 --memory=512Mi --cpu=1'

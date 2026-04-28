@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/firestore"
-	"github.com/samaj-project/samaj/internal/domain"
+	"github.com/resqlink-project/resqlink/internal/domain"
 	"google.golang.org/api/iterator"
 )
 

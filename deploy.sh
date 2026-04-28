@@ -1,10 +1,10 @@
 #!/bin/bash
 set -e
 
-PROJECT_ID="samaj-58742"
+PROJECT_ID="resqlink-58742"
 REGION="asia-south1"
 
-echo "=== SAMAJ Cloud Run Deployment ==="
+echo "=== RESQLINK Cloud Run Deployment ==="
 echo "Project: $PROJECT_ID"
 echo "Region: $REGION"
 echo ""
@@ -19,7 +19,7 @@ gcloud services enable \
 
 # Create Artifact Registry repo (if not exists)
 echo "[2/6] Creating Artifact Registry..."
-gcloud artifacts repositories create samaj-docker \
+gcloud artifacts repositories create resqlink-docker \
   --repository-format=docker \
   --location=$REGION \
   --project=$PROJECT_ID 2>/dev/null || echo "  (already exists)"
@@ -27,13 +27,13 @@ gcloud artifacts repositories create samaj-docker \
 # Build & deploy API
 echo "[3/6] Building API Docker image via Cloud Build..."
 gcloud builds submit \
-  --tag ${REGION}-docker.pkg.dev/${PROJECT_ID}/samaj-docker/samaj-api:latest \
+  --tag ${REGION}-docker.pkg.dev/${PROJECT_ID}/resqlink-docker/resqlink-api:latest \
   --dockerfile=Dockerfile.api \
   --project=$PROJECT_ID
 
 echo "[4/6] Deploying API to Cloud Run..."
-gcloud run deploy samaj-api \
-  --image ${REGION}-docker.pkg.dev/${PROJECT_ID}/samaj-docker/samaj-api:latest \
+gcloud run deploy resqlink-api \
+  --image ${REGION}-docker.pkg.dev/${PROJECT_ID}/resqlink-docker/resqlink-api:latest \
   --platform managed \
   --region $REGION \
   --allow-unauthenticated \
@@ -46,13 +46,13 @@ gcloud run deploy samaj-api \
 # Build & deploy Worker
 echo "[5/6] Building Worker Docker image via Cloud Build..."
 gcloud builds submit \
-  --tag ${REGION}-docker.pkg.dev/${PROJECT_ID}/samaj-docker/samaj-worker:latest \
+  --tag ${REGION}-docker.pkg.dev/${PROJECT_ID}/resqlink-docker/resqlink-worker:latest \
   --dockerfile=Dockerfile.worker \
   --project=$PROJECT_ID
 
 echo "[6/6] Deploying Worker to Cloud Run..."
-gcloud run deploy samaj-worker \
-  --image ${REGION}-docker.pkg.dev/${PROJECT_ID}/samaj-docker/samaj-worker:latest \
+gcloud run deploy resqlink-worker \
+  --image ${REGION}-docker.pkg.dev/${PROJECT_ID}/resqlink-docker/resqlink-worker:latest \
   --platform managed \
   --region $REGION \
   --no-allow-unauthenticated \
@@ -64,7 +64,7 @@ gcloud run deploy samaj-worker \
 
 echo ""
 echo "=== DEPLOYMENT COMPLETE ==="
-API_URL=$(gcloud run services describe samaj-api --region $REGION --project=$PROJECT_ID --format='value(status.url)')
+API_URL=$(gcloud run services describe resqlink-api --region $REGION --project=$PROJECT_ID --format='value(status.url)')
 echo "API URL: $API_URL"
 echo ""
 echo "Test with: curl $API_URL/health"

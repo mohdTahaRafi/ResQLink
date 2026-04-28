@@ -158,7 +158,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    'SAMAJ',
+                    'RESQLINK',
                     style: theme.textTheme.headlineLarge?.copyWith(
                       fontWeight: FontWeight.w800,
                       letterSpacing: 1.5,

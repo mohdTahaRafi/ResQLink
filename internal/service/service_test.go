@@ -4,7 +4,7 @@ import (
 	"math"
 	"testing"
 
-	"github.com/samaj-project/samaj/internal/domain"
+	"github.com/resqlink-project/resqlink/internal/domain"
 )
 
 func TestComputeUrgency_BasicCase(t *testing.T) {

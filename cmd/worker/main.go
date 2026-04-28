@@ -12,10 +12,10 @@ import (
 
 	"cloud.google.com/go/firestore"
 	"cloud.google.com/go/pubsub"
-	"github.com/samaj-project/samaj/internal/ai"
-	"github.com/samaj-project/samaj/internal/domain"
-	"github.com/samaj-project/samaj/internal/repository"
-	"github.com/samaj-project/samaj/internal/service"
+	"github.com/resqlink-project/resqlink/internal/ai"
+	"github.com/resqlink-project/resqlink/internal/domain"
+	"github.com/resqlink-project/resqlink/internal/repository"
+	"github.com/resqlink-project/resqlink/internal/service"
 )
 
 func main() {
@@ -71,7 +71,7 @@ func main() {
 			w.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(w).Encode(map[string]interface{}{
 				"status":    "ok",
-				"service":   "samaj-worker",
+				"service":   "resqlink-worker",
 				"timestamp": time.Now().Unix(),
 			})
 		})
@@ -94,7 +94,7 @@ func main() {
 		cancel()
 	}()
 
-	log.Printf("SAMAJ worker listening on subscription: %s", subscriptionID)
+	log.Printf("RESQLINK worker listening on subscription: %s", subscriptionID)
 
 	err = sub.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
 		var event domain.IngestionEvent

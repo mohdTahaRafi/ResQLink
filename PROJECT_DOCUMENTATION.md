@@ -1,15 +1,15 @@
-# SAMAJ — Community Intelligence Platform
+# RESQLINK — Community Intelligence Platform
 ## Comprehensive Project Documentation
 
 ---
 
 ## 1. Brief About the Solution
 
-**SAMAJ** (Sanskrit: "Community") is an AI-powered Community Intelligence Platform designed to fundamentally transform how non-profit organizations (NGOs), public volunteers, and specialized professionals (lawyers, doctors) collaborate to identify, prioritize, and resolve civic, medical, legal, and disaster-related issues at the grassroots level.
+**RESQLINK** (Sanskrit: "Community") is an AI-powered Community Intelligence Platform designed to fundamentally transform how non-profit organizations (NGOs), public volunteers, and specialized professionals (lawyers, doctors) collaborate to identify, prioritize, and resolve civic, medical, legal, and disaster-related issues at the grassroots level.
 
 In developing nations, millions of citizen-reported issues — broken infrastructure, medical emergencies in underserved areas, legal disputes affecting vulnerable populations — go unresolved because there is no unified, intelligent system connecting the people who report problems with the organizations equipped to solve them. Existing grievance portals are bureaucratic, opaque, and offer zero intelligent routing.
 
-**SAMAJ** bridges this gap by providing:
+**RESQLINK** bridges this gap by providing:
 - **General Users (Reporters)** with a frictionless, multimodal reporting interface (text, image, voice, GPS) to submit issues from the field.
 - **Volunteers** with an organized task pipeline, automatically matched to issues based on their skills, proximity, and reliability.
 - **Specialized Professionals (Lawyers & Doctors)** with an AI-first case management environment, powered by Google Gemini, for semantic search, document analysis, and AI-assisted case evaluation.
@@ -19,7 +19,7 @@ The platform is built on Google Cloud's ecosystem — Firebase Authentication, C
 
 **Target Users:** NGOs, civic bodies, volunteer organizations, legal aid societies, public health networks, and the general public.
 
-**Core Value:** SAMAJ reduces issue-to-resolution time by up to 70% through AI-driven triage, intelligent volunteer matching, and real-time geospatial awareness — turning community reporting from a passive suggestion box into an active intelligence system.
+**Core Value:** RESQLINK reduces issue-to-resolution time by up to 70% through AI-driven triage, intelligent volunteer matching, and real-time geospatial awareness — turning community reporting from a passive suggestion box into an active intelligence system.
 
 ---
 
@@ -27,7 +27,7 @@ The platform is built on Google Cloud's ecosystem — Firebase Authentication, C
 
 ### 2a. How Different Is It from Existing Solutions? (Competitive Analysis)
 
-| Dimension | Traditional Portals (311, CPGRAMS, MyGov) | Volunteer Platforms (VolunteerMatch, JustDial) | **SAMAJ** |
+| Dimension | Traditional Portals (311, CPGRAMS, MyGov) | Volunteer Platforms (VolunteerMatch, JustDial) | **RESQLINK** |
 |---|---|---|---|
 | **Report Intake** | Text-only web forms | Not applicable | Multimodal: text, image, voice, GPS — processed by Gemini AI |
 | **Issue Classification** | Manual, department-based | None | AI-automated (Gemini extracts category, severity, population impact) |
@@ -38,11 +38,11 @@ The platform is built on Google Cloud's ecosystem — Firebase Authentication, C
 | **Multilingual** | Limited | No | Hindi/regional dialect → English translation via Gemini |
 | **Transparency** | Opaque | None | Full lifecycle tracking: pending → accepted → in_progress → resolved |
 
-**Key Differentiator:** No existing platform combines AI-powered multimodal intake, algorithmic volunteer matching, specialist-grade case management, and real-time geospatial intelligence in a single, role-based interface. SAMAJ is the first platform to treat community issue management as an intelligent operations problem rather than a passive ticketing system.
+**Key Differentiator:** No existing platform combines AI-powered multimodal intake, algorithmic volunteer matching, specialist-grade case management, and real-time geospatial intelligence in a single, role-based interface. RESQLINK is the first platform to treat community issue management as an intelligent operations problem rather than a passive ticketing system.
 
 ### 2b. How Will It Solve the Problem? (Core Mechanics)
 
-SAMAJ employs a four-stage intelligent pipeline:
+RESQLINK employs a four-stage intelligent pipeline:
 
 **Stage 1 — Intelligent Intake:** When a General User submits a report (text, photo of a broken road, voice note in Hindi), the system ingests it via a Cloud Pub/Sub event. Gemini 3.1 Pro (via Vertex AI) processes the raw input — translating regional dialects, classifying the issue category (water, sanitation, road, legal, medical, etc.), estimating severity (1-10 index), and predicting the affected population count. This structured data is persisted to Cloud Firestore alongside the original media.
 
@@ -56,7 +56,7 @@ SAMAJ employs a four-stage intelligent pipeline:
 
 **"AI-First Community Intelligence — from Report to Resolution in One Platform."**
 
-SAMAJ's USP is the integration of three capabilities that have never been combined in a civic platform:
+RESQLINK's USP is the integration of three capabilities that have never been combined in a civic platform:
 
 1. **Gemini-Powered Multimodal AI:** The only platform that accepts images, voice (in regional languages), and text — and automatically extracts structured, actionable intelligence without human intervention.
 2. **Algorithmic Volunteer Matching:** Not random assignment, not self-selection — mathematically optimized matching using cosine similarity, geospatial distance, and reliability scoring.
@@ -110,7 +110,7 @@ SAMAJ's USP is the integration of three capabilities that have never been combin
 
 ### Flow 1: Issue Reporting by a General User
 
-Step 1: User opens the SAMAJ web app and arrives at the Role Selection Screen.
+Step 1: User opens the RESQLINK web app and arrives at the Role Selection Screen.
 Step 2: User selects the "General User" role card.
 Step 3: System saves the selected role to local storage and navigates to the Login Screen.
 Step 4: Login Screen displays a role badge "Signing in as General User" and presents email/password form.
@@ -261,7 +261,7 @@ User submits report → Flutter App (Dio + JWT) → Go API Server (Gin + Auth MW
 
 **Layout:** Full-screen, vertical layout with top branding and a scrollable list of 4 role cards.
 
-- **Top Section:** SAMAJ logo (gradient icon: indigo-to-teal) + "SAMAJ" text (bold, large, letter-spaced).
+- **Top Section:** RESQLINK logo (gradient icon: indigo-to-teal) + "RESQLINK" text (bold, large, letter-spaced).
 - **Subtitle:** "Choose your role" (headline) + "Select how you want to use the platform" (body text).
 - **Role Cards (4 items, vertically stacked):**
   - Each card is a horizontal row: gradient icon container (52×52px, rounded, with icon) → title + subtitle → circular arrow button.
@@ -421,18 +421,18 @@ User submits report → Flutter App (Dio + JWT) → Go API Server (Gin + Auth MW
 - **Public Transparency Dashboard:** Citizen-facing portal showing aggregate resolution rates, response times, and issue density by ward — building civic trust.
 
 ### Phase 4: Enterprise & Expansion (Year 2-3)
-- **White-Label Solution:** Package SAMAJ as a configurable SaaS product for civic bodies, disaster relief organizations, and healthcare networks globally.
+- **White-Label Solution:** Package RESQLINK as a configurable SaaS product for civic bodies, disaster relief organizations, and healthcare networks globally.
 - **Federated Learning:** Enable AI model improvement across NGO deployments without sharing sensitive data, maintaining privacy while improving accuracy.
 - **Drone & IoT Integration:** Accept reports from IoT sensors (flood gauges, air quality monitors) and drone surveys for large-scale environmental monitoring.
 - **Blockchain Audit Trail:** Immutable record of every state transition for regulatory compliance, anti-corruption, and donor accountability.
 - **Expansion Markets:** Southeast Asia, Sub-Saharan Africa, and Latin America — regions with similar civic infrastructure challenges.
 
 ### Pivot Opportunities
-- **Disaster Response Platform:** Position SAMAJ as the default coordination tool for disaster relief organizations (Red Cross, NDRF) — the multimodal intake + volunteer matching + heatmap stack is directly applicable.
-- **Smart City Dashboard:** Municipal governments can use SAMAJ as their citizen reporting and service delivery layer, replacing legacy 311 systems.
+- **Disaster Response Platform:** Position RESQLINK as the default coordination tool for disaster relief organizations (Red Cross, NDRF) — the multimodal intake + volunteer matching + heatmap stack is directly applicable.
+- **Smart City Dashboard:** Municipal governments can use RESQLINK as their citizen reporting and service delivery layer, replacing legacy 311 systems.
 - **Healthcare Network Coordinator:** Specialist case management + volunteer matching can be adapted for community health worker coordination in rural areas.
 
 ---
 
 *Document prepared for the Google Solutions Challenge 2026.*
-*Team SAMAJ — Building Community Intelligence at Scale.*
+*Team RESQLINK — Building Community Intelligence at Scale.*

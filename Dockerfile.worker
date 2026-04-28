@@ -11,12 +11,12 @@ COPY . .
 
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
     -ldflags="-s -w" \
-    -o /bin/samaj-worker ./cmd/worker
+    -o /bin/resqlink-worker ./cmd/worker
 
 FROM gcr.io/distroless/static-debian12
 
-COPY --from=builder /bin/samaj-worker /samaj-worker
+COPY --from=builder /bin/resqlink-worker /resqlink-worker
 
 EXPOSE 8081
 
-ENTRYPOINT ["/samaj-worker"]
+ENTRYPOINT ["/resqlink-worker"]

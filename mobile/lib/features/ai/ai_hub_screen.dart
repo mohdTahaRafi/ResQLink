@@ -43,7 +43,8 @@ class _AIHubScreenState extends ConsumerState<AIHubScreen> {
                 ),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(Icons.auto_awesome, color: Colors.white, size: 18),
+              child:
+                  const Icon(Icons.auto_awesome, color: Colors.white, size: 18),
             ),
             const SizedBox(width: 10),
             const Text('AI Hub'),
@@ -67,12 +68,17 @@ class _AIHubScreenState extends ConsumerState<AIHubScreen> {
                 return Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 4),
                   child: ChoiceChip(
-                    avatar: Icon(f.icon, size: 18, color: selected ? Colors.white : f.color),
-                    label: Text(f.label, style: TextStyle(
-                      color: selected ? Colors.white : theme.colorScheme.onSurface,
-                      fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                      fontSize: 12,
-                    )),
+                    avatar: Icon(f.icon,
+                        size: 18, color: selected ? Colors.white : f.color),
+                    label: Text(f.label,
+                        style: TextStyle(
+                          color: selected
+                              ? Colors.white
+                              : theme.colorScheme.onSurface,
+                          fontWeight:
+                              selected ? FontWeight.w600 : FontWeight.w400,
+                          fontSize: 12,
+                        )),
                     selected: selected,
                     selectedColor: f.color,
                     onSelected: (_) => setState(() => _selectedFeature = i),
@@ -126,7 +132,10 @@ class _ChatTabState extends ConsumerState<_ChatTab> {
   bool _loading = false;
 
   @override
-  void dispose() { _ctrl.dispose(); super.dispose(); }
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
 
   Future<void> _send() async {
     final text = _ctrl.text.trim();
@@ -158,15 +167,20 @@ class _ChatTabState extends ConsumerState<_ChatTab> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.smart_toy, size: 64, color: theme.colorScheme.primary.withOpacity(0.3)),
+                  Icon(Icons.smart_toy,
+                      size: 64,
+                      color: theme.colorScheme.primary.withOpacity(0.3)),
                   const SizedBox(height: 16),
-                  Text('SAMAJ AI Assistant', style: theme.textTheme.titleMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  )),
+                  Text('RESQLINK AI Assistant',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      )),
                   const SizedBox(height: 8),
-                  Text('Ask me anything about your tasks, safety protocols,\nor how to handle specific situations.',
+                  Text(
+                    'Ask me anything about your tasks, safety protocols,\nor how to handle specific situations.',
                     textAlign: TextAlign.center,
-                    style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                    style: theme.textTheme.bodySmall
+                        ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                   ),
                 ],
               ),
@@ -180,18 +194,26 @@ class _ChatTabState extends ConsumerState<_ChatTab> {
               itemBuilder: (ctx, i) {
                 final msg = _messages[i];
                 return Align(
-                  alignment: msg.isUser ? Alignment.centerRight : Alignment.centerLeft,
+                  alignment:
+                      msg.isUser ? Alignment.centerRight : Alignment.centerLeft,
                   child: Container(
                     margin: const EdgeInsets.only(bottom: 8),
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                    constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 10),
+                    constraints: BoxConstraints(
+                        maxWidth: MediaQuery.of(context).size.width * 0.75),
                     decoration: BoxDecoration(
-                      color: msg.isUser ? theme.colorScheme.primary : theme.colorScheme.surfaceContainerHighest,
+                      color: msg.isUser
+                          ? theme.colorScheme.primary
+                          : theme.colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    child: Text(msg.text, style: TextStyle(
-                      color: msg.isUser ? theme.colorScheme.onPrimary : theme.colorScheme.onSurface,
-                    )),
+                    child: Text(msg.text,
+                        style: TextStyle(
+                          color: msg.isUser
+                              ? theme.colorScheme.onPrimary
+                              : theme.colorScheme.onSurface,
+                        )),
                   ),
                 );
               },
@@ -206,9 +228,11 @@ class _ChatTabState extends ConsumerState<_ChatTab> {
                 child: TextField(
                   controller: _ctrl,
                   decoration: InputDecoration(
-                    hintText: 'Ask SAMAJ AI...',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(24)),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    hintText: 'Ask RESQLINK AI...',
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24)),
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
                   ),
                   onSubmitted: (_) => _send(),
                 ),
@@ -248,7 +272,10 @@ class _ImageAnalysisTabState extends ConsumerState<_ImageAnalysisTab> {
 
   Future<void> _analyze() async {
     // Demo with placeholder - in production, use image_picker
-    setState(() { _loading = true; _error = null; });
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       final api = ref.read(apiClientProvider);
       // Use a small test image
@@ -273,12 +300,18 @@ class _ImageAnalysisTabState extends ConsumerState<_ImageAnalysisTab> {
             icon: Icons.image_search,
             color: const Color(0xFF00BFA5),
             title: 'Multimodal Image Analysis',
-            subtitle: 'Upload a photo and Gemini will detect the issue type, severity, and key objects',
+            subtitle:
+                'Upload a photo and Gemini will detect the issue type, severity, and key objects',
           ),
           const SizedBox(height: 16),
           FilledButton.icon(
             onPressed: _loading ? null : _analyze,
-            icon: _loading ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.camera_alt),
+            icon: _loading
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2))
+                : const Icon(Icons.camera_alt),
             label: Text(_loading ? 'Analyzing...' : 'Analyze Image'),
           ),
           if (_error != null) ...[
@@ -287,10 +320,16 @@ class _ImageAnalysisTabState extends ConsumerState<_ImageAnalysisTab> {
           ],
           if (_result != null) ...[
             const SizedBox(height: 16),
-            _ResultCard(title: 'Issue Type', value: _result!['issue_type']?.toString() ?? 'N/A'),
-            _ResultCard(title: 'Description', value: _result!['description']?.toString() ?? 'N/A'),
+            _ResultCard(
+                title: 'Issue Type',
+                value: _result!['issue_type']?.toString() ?? 'N/A'),
+            _ResultCard(
+                title: 'Description',
+                value: _result!['description']?.toString() ?? 'N/A'),
             _ResultCard(title: 'Severity', value: '${_result!['severity']}/10'),
-            _ResultCard(title: 'Category', value: _result!['suggested_category']?.toString() ?? 'N/A'),
+            _ResultCard(
+                title: 'Category',
+                value: _result!['suggested_category']?.toString() ?? 'N/A'),
           ],
         ],
       ),
@@ -313,7 +352,10 @@ class _SentimentTabState extends ConsumerState<_SentimentTab> {
   bool _loading = false;
 
   @override
-  void dispose() { _ctrl.dispose(); super.dispose(); }
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
 
   Future<void> _analyze() async {
     if (_ctrl.text.trim().isEmpty) return;
@@ -340,7 +382,8 @@ class _SentimentTabState extends ConsumerState<_SentimentTab> {
             icon: Icons.mood,
             color: const Color(0xFFFF6F61),
             title: 'Sentiment & Emotion Analysis',
-            subtitle: 'Detect emotional tone, urgency signals, and distress levels',
+            subtitle:
+                'Detect emotional tone, urgency signals, and distress levels',
           ),
           const SizedBox(height: 16),
           TextField(
@@ -348,25 +391,42 @@ class _SentimentTabState extends ConsumerState<_SentimentTab> {
             maxLines: 4,
             decoration: InputDecoration(
               hintText: 'Paste or type a report text to analyze...',
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              border:
+                  OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             ),
           ),
           const SizedBox(height: 12),
           FilledButton.icon(
             onPressed: _loading ? null : _analyze,
-            icon: _loading ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.psychology),
+            icon: _loading
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2))
+                : const Icon(Icons.psychology),
             label: Text(_loading ? 'Analyzing...' : 'Analyze Sentiment'),
-            style: FilledButton.styleFrom(backgroundColor: const Color(0xFFFF6F61)),
+            style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFFF6F61)),
           ),
           if (_result != null) ...[
             const SizedBox(height: 16),
-            _ResultCard(title: 'Sentiment', value: _result!['overall_sentiment']?.toString() ?? 'N/A'),
-            _ResultCard(title: 'Urgency Boost', value: '+${_result!['urgency_boost']}'),
-            _ResultCard(title: 'Emotional Intensity', value: '${((_result!['emotional_intensity'] ?? 0) * 100).toStringAsFixed(0)}%'),
+            _ResultCard(
+                title: 'Sentiment',
+                value: _result!['overall_sentiment']?.toString() ?? 'N/A'),
+            _ResultCard(
+                title: 'Urgency Boost', value: '+${_result!['urgency_boost']}'),
+            _ResultCard(
+                title: 'Emotional Intensity',
+                value:
+                    '${((_result!['emotional_intensity'] ?? 0) * 100).toStringAsFixed(0)}%'),
             if (_result!['emotions_detected'] != null)
-              _ResultCard(title: 'Emotions', value: (_result!['emotions_detected'] as List).join(', ')),
+              _ResultCard(
+                  title: 'Emotions',
+                  value: (_result!['emotions_detected'] as List).join(', ')),
             if (_result!['recommendation'] != null)
-              _ResultCard(title: 'Recommendation', value: _result!['recommendation'].toString()),
+              _ResultCard(
+                  title: 'Recommendation',
+                  value: _result!['recommendation'].toString()),
           ],
         ],
       ),
@@ -390,7 +450,10 @@ class _TranslationTabState extends ConsumerState<_TranslationTab> {
   bool _loading = false;
 
   @override
-  void dispose() { _ctrl.dispose(); super.dispose(); }
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
 
   Future<void> _translate() async {
     if (_ctrl.text.trim().isEmpty) return;
@@ -417,7 +480,8 @@ class _TranslationTabState extends ConsumerState<_TranslationTab> {
             icon: Icons.translate,
             color: const Color(0xFF2196F3),
             title: 'Real-Time Translation',
-            subtitle: 'Translate between Hindi, English, and regional languages',
+            subtitle:
+                'Translate between Hindi, English, and regional languages',
           ),
           const SizedBox(height: 16),
           TextField(
@@ -425,7 +489,8 @@ class _TranslationTabState extends ConsumerState<_TranslationTab> {
             maxLines: 3,
             decoration: InputDecoration(
               hintText: 'Enter text to translate...',
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              border:
+                  OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             ),
           ),
           const SizedBox(height: 12),
@@ -440,16 +505,23 @@ class _TranslationTabState extends ConsumerState<_TranslationTab> {
                   ButtonSegment(value: 'Tamil', label: Text('Tamil')),
                 ],
                 selected: {_targetLang},
-                onSelectionChanged: (s) => setState(() => _targetLang = s.first),
+                onSelectionChanged: (s) =>
+                    setState(() => _targetLang = s.first),
               ),
             ],
           ),
           const SizedBox(height: 12),
           FilledButton.icon(
             onPressed: _loading ? null : _translate,
-            icon: _loading ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.translate),
+            icon: _loading
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2))
+                : const Icon(Icons.translate),
             label: Text(_loading ? 'Translating...' : 'Translate'),
-            style: FilledButton.styleFrom(backgroundColor: const Color(0xFF2196F3)),
+            style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF2196F3)),
           ),
           if (_result != null) ...[
             const SizedBox(height: 16),
@@ -462,13 +534,16 @@ class _TranslationTabState extends ConsumerState<_TranslationTab> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Translation', style: Theme.of(context).textTheme.labelSmall),
+                  Text('Translation',
+                      style: Theme.of(context).textTheme.labelSmall),
                   const SizedBox(height: 8),
-                  SelectableText(_result!['translated_text']?.toString() ?? '', style: Theme.of(context).textTheme.bodyLarge),
+                  SelectableText(_result!['translated_text']?.toString() ?? '',
+                      style: Theme.of(context).textTheme.bodyLarge),
                   if (_result!['confidence'] != null) ...[
                     const SizedBox(height: 8),
-                    Text('Confidence: ${((_result!['confidence'] ?? 0) * 100).toStringAsFixed(0)}%',
-                      style: Theme.of(context).textTheme.bodySmall),
+                    Text(
+                        'Confidence: ${((_result!['confidence'] ?? 0) * 100).toStringAsFixed(0)}%',
+                        style: Theme.of(context).textTheme.bodySmall),
                   ],
                 ],
               ),
@@ -495,7 +570,10 @@ class _DuplicateTabState extends ConsumerState<_DuplicateTab> {
   bool _loading = false;
 
   @override
-  void dispose() { _ctrl.dispose(); super.dispose(); }
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
 
   Future<void> _check() async {
     if (_ctrl.text.trim().isEmpty) return;
@@ -522,7 +600,8 @@ class _DuplicateTabState extends ConsumerState<_DuplicateTab> {
             icon: Icons.content_copy,
             color: const Color(0xFFFF9800),
             title: 'Duplicate Detection',
-            subtitle: 'Check if a report is similar to existing ones before submitting',
+            subtitle:
+                'Check if a report is similar to existing ones before submitting',
           ),
           const SizedBox(height: 16),
           TextField(
@@ -530,21 +609,34 @@ class _DuplicateTabState extends ConsumerState<_DuplicateTab> {
             maxLines: 4,
             decoration: InputDecoration(
               hintText: 'Enter report text to check for duplicates...',
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              border:
+                  OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             ),
           ),
           const SizedBox(height: 12),
           FilledButton.icon(
             onPressed: _loading ? null : _check,
-            icon: _loading ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.search),
+            icon: _loading
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2))
+                : const Icon(Icons.search),
             label: Text(_loading ? 'Checking...' : 'Check Duplicates'),
-            style: FilledButton.styleFrom(backgroundColor: const Color(0xFFFF9800)),
+            style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFFF9800)),
           ),
           if (_result != null) ...[
             const SizedBox(height: 16),
-            _ResultCard(title: 'Has Duplicates', value: _result!['has_duplicates'] == true ? '⚠️ Yes' : '✅ No'),
-            _ResultCard(title: 'Recommendation', value: _result!['recommendation']?.toString() ?? 'N/A'),
-            _ResultCard(title: 'Summary', value: _result!['summary']?.toString() ?? 'N/A'),
+            _ResultCard(
+                title: 'Has Duplicates',
+                value: _result!['has_duplicates'] == true ? '⚠️ Yes' : '✅ No'),
+            _ResultCard(
+                title: 'Recommendation',
+                value: _result!['recommendation']?.toString() ?? 'N/A'),
+            _ResultCard(
+                title: 'Summary',
+                value: _result!['summary']?.toString() ?? 'N/A'),
           ],
         ],
       ),
@@ -583,20 +675,28 @@ class _OCRTabState extends ConsumerState<_OCRTab> {
             onPressed: _loading ? null : () {},
             icon: const Icon(Icons.camera_alt),
             label: const Text('Scan Document'),
-            style: FilledButton.styleFrom(backgroundColor: const Color(0xFF9C27B0)),
+            style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF9C27B0)),
           ),
           const SizedBox(height: 8),
-          Text('Capture or upload a document image to extract text',
+          Text(
+            'Capture or upload a document image to extract text',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
           ),
           if (_result != null) ...[
             const SizedBox(height: 16),
-            _ResultCard(title: 'Document Type', value: _result!['document_type']?.toString() ?? 'N/A'),
-            _ResultCard(title: 'Language', value: _result!['language']?.toString() ?? 'N/A'),
-            _ResultCard(title: 'Extracted Text', value: _result!['extracted_text']?.toString() ?? 'N/A'),
+            _ResultCard(
+                title: 'Document Type',
+                value: _result!['document_type']?.toString() ?? 'N/A'),
+            _ResultCard(
+                title: 'Language',
+                value: _result!['language']?.toString() ?? 'N/A'),
+            _ResultCard(
+                title: 'Extracted Text',
+                value: _result!['extracted_text']?.toString() ?? 'N/A'),
           ],
         ],
       ),
@@ -642,33 +742,49 @@ class _ProgressReportTabState extends ConsumerState<_ProgressReportTab> {
             icon: Icons.analytics,
             color: const Color(0xFF4CAF50),
             title: 'AI Progress Report',
-            subtitle: 'Generate a comprehensive weekly summary powered by Gemini',
+            subtitle:
+                'Generate a comprehensive weekly summary powered by Gemini',
           ),
           const SizedBox(height: 16),
           FilledButton.icon(
             onPressed: _loading ? null : _generate,
-            icon: _loading ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.auto_awesome),
+            icon: _loading
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2))
+                : const Icon(Icons.auto_awesome),
             label: Text(_loading ? 'Generating...' : 'Generate Report'),
-            style: FilledButton.styleFrom(backgroundColor: const Color(0xFF4CAF50)),
+            style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF4CAF50)),
           ),
           if (_report != null) ...[
             const SizedBox(height: 16),
             // Stats row
             Row(
               children: [
-                _StatChip('Total', '${_report!['total_issues'] ?? 0}', Colors.blue),
+                _StatChip(
+                    'Total', '${_report!['total_issues'] ?? 0}', Colors.blue),
                 const SizedBox(width: 8),
-                _StatChip('Resolved', '${_report!['resolved_issues'] ?? 0}', Colors.green),
+                _StatChip('Resolved', '${_report!['resolved_issues'] ?? 0}',
+                    Colors.green),
                 const SizedBox(width: 8),
-                _StatChip('Critical', '${_report!['critical_issues'] ?? 0}', Colors.red),
+                _StatChip('Critical', '${_report!['critical_issues'] ?? 0}',
+                    Colors.red),
               ],
             ),
             const SizedBox(height: 12),
-            _ResultCard(title: 'Executive Summary', value: _report!['executive_summary']?.toString() ?? 'N/A'),
+            _ResultCard(
+                title: 'Executive Summary',
+                value: _report!['executive_summary']?.toString() ?? 'N/A'),
             if (_report!['key_achievements'] != null)
-              _ResultCard(title: 'Key Achievements', value: (_report!['key_achievements'] as List).join('\n• ')),
+              _ResultCard(
+                  title: 'Key Achievements',
+                  value: (_report!['key_achievements'] as List).join('\n• ')),
             if (_report!['recommendations'] != null)
-              _ResultCard(title: 'Recommendations', value: (_report!['recommendations'] as List).join('\n• ')),
+              _ResultCard(
+                  title: 'Recommendations',
+                  value: (_report!['recommendations'] as List).join('\n• ')),
           ],
         ],
       ),
@@ -716,32 +832,48 @@ class _SkillsTabState extends ConsumerState<_SkillsTab> {
             icon: Icons.school,
             color: const Color(0xFFE91E63),
             title: 'AI Skill Recommendations',
-            subtitle: 'Get personalized skill development suggestions based on your task history',
+            subtitle:
+                'Get personalized skill development suggestions based on your task history',
           ),
           const SizedBox(height: 16),
           FilledButton.icon(
             onPressed: _loading ? null : _getRecommendations,
-            icon: _loading ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.lightbulb),
+            icon: _loading
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2))
+                : const Icon(Icons.lightbulb),
             label: Text(_loading ? 'Analyzing...' : 'Get Recommendations'),
-            style: FilledButton.styleFrom(backgroundColor: const Color(0xFFE91E63)),
+            style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFE91E63)),
           ),
           if (_result != null) ...[
             const SizedBox(height: 16),
-            _ResultCard(title: 'Career Path', value: _result!['career_path']?.toString() ?? 'N/A'),
+            _ResultCard(
+                title: 'Career Path',
+                value: _result!['career_path']?.toString() ?? 'N/A'),
             if (_result!['recommended_skills'] != null)
-              ...(_result!['recommended_skills'] as List).map((s) =>
-                Card(
+              ...(_result!['recommended_skills'] as List).map(
+                (s) => Card(
                   margin: const EdgeInsets.only(bottom: 8),
                   child: ListTile(
-                    leading: Icon(Icons.star, color: s['priority'] == 'high' ? Colors.orange : Colors.grey),
+                    leading: Icon(Icons.star,
+                        color: s['priority'] == 'high'
+                            ? Colors.orange
+                            : Colors.grey),
                     title: Text(s['skill']?.toString() ?? ''),
                     subtitle: Text(s['reason']?.toString() ?? ''),
-                    trailing: Chip(label: Text(s['priority']?.toString() ?? '', style: const TextStyle(fontSize: 10))),
+                    trailing: Chip(
+                        label: Text(s['priority']?.toString() ?? '',
+                            style: const TextStyle(fontSize: 10))),
                   ),
                 ),
               ),
             if (_result!['strengths'] != null)
-              _ResultCard(title: 'Your Strengths', value: (_result!['strengths'] as List).join(', ')),
+              _ResultCard(
+                  title: 'Your Strengths',
+                  value: (_result!['strengths'] as List).join(', ')),
           ],
         ],
       ),
@@ -759,7 +891,11 @@ class _FeatureHeader extends StatelessWidget {
   final String title;
   final String subtitle;
 
-  const _FeatureHeader({required this.icon, required this.color, required this.title, required this.subtitle});
+  const _FeatureHeader(
+      {required this.icon,
+      required this.color,
+      required this.title,
+      required this.subtitle});
 
   @override
   Widget build(BuildContext context) {
@@ -778,11 +914,16 @@ class _FeatureHeader extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+              Text(title,
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium
+                      ?.copyWith(fontWeight: FontWeight.w700)),
               const SizedBox(height: 2),
-              Text(subtitle, style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              )),
+              Text(subtitle,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      )),
             ],
           ),
         ),
@@ -805,12 +946,14 @@ class _ResultCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: Theme.of(context).colorScheme.primary,
-              fontWeight: FontWeight.w600,
-            )),
+            Text(title,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                    )),
             const SizedBox(height: 4),
-            SelectableText(value, style: Theme.of(context).textTheme.bodyMedium),
+            SelectableText(value,
+                style: Theme.of(context).textTheme.bodyMedium),
           ],
         ),
       ),
@@ -836,7 +979,9 @@ class _StatChip extends StatelessWidget {
         ),
         child: Column(
           children: [
-            Text(value, style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: color)),
+            Text(value,
+                style: TextStyle(
+                    fontSize: 24, fontWeight: FontWeight.w800, color: color)),
             Text(label, style: TextStyle(fontSize: 11, color: color)),
           ],
         ),

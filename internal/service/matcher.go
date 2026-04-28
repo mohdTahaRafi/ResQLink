@@ -5,7 +5,7 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/samaj-project/samaj/internal/domain"
+	"github.com/resqlink-project/resqlink/internal/domain"
 )
 
 // Match weights.

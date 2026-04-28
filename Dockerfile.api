@@ -11,12 +11,12 @@ COPY . .
 
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
     -ldflags="-s -w" \
-    -o /bin/samaj-api ./cmd/api
+    -o /bin/resqlink-api ./cmd/api
 
 FROM gcr.io/distroless/static-debian12
 
-COPY --from=builder /bin/samaj-api /samaj-api
+COPY --from=builder /bin/resqlink-api /resqlink-api
 
 EXPOSE 8080
 
-ENTRYPOINT ["/samaj-api"]
+ENTRYPOINT ["/resqlink-api"]

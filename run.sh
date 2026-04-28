@@ -1,6 +1,6 @@
 #!/bin/bash
 export GOOGLE_APPLICATION_CREDENTIALS="$(pwd)/credentials/service-account.json"
-export GCP_PROJECT_ID="samaj-58742"
+export GCP_PROJECT_ID="resqlink-58742"
 export GCP_LOCATION="asia-south1"
 
 echo "Starting API Server..."
