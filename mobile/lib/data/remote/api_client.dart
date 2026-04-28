@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-/// HTTP client for the SAMAJ Go backend API.
+/// HTTP client for the RESQLINK Go backend API.
 class ApiClient {
   late final Dio _dio;
 

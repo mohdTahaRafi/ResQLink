@@ -1,4 +1,4 @@
-module github.com/samaj-project/samaj
+module github.com/resqlink-project/resqlink
 
 go 1.26.2
 

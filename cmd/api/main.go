@@ -23,11 +23,11 @@ import (
 	firebase "firebase.google.com/go/v4"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/samaj-project/samaj/internal/ai"
-	"github.com/samaj-project/samaj/internal/domain"
-	"github.com/samaj-project/samaj/internal/middleware"
-	"github.com/samaj-project/samaj/internal/repository"
-	"github.com/samaj-project/samaj/internal/service"
+	"github.com/resqlink-project/resqlink/internal/ai"
+	"github.com/resqlink-project/resqlink/internal/domain"
+	"github.com/resqlink-project/resqlink/internal/middleware"
+	"github.com/resqlink-project/resqlink/internal/repository"
+	"github.com/resqlink-project/resqlink/internal/service"
 )
 
 // compressBase64Image decodes base64, subsamples, and re-encodes as JPEG
@@ -182,7 +182,7 @@ func main() {
 	if port == "" {
 		port = "8080"
 	}
-	log.Printf("SAMAJ API server starting on :%s", port)
+	log.Printf("RESQLINK API server starting on :%s", port)
 	if err := r.Run(":" + port); err != nil {
 		log.Fatalf("server failed: %v", err)
 	}

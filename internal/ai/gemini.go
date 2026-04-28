@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"cloud.google.com/go/vertexai/genai"
-	"github.com/samaj-project/samaj/internal/domain"
+	"github.com/resqlink-project/resqlink/internal/domain"
 )
 
 const systemInstruction = `Act as a bilingual field-data parser for a community reporting platform.
@@ -455,7 +455,7 @@ Return JSON with:
 
 // ChatWithAI provides context-aware conversation for volunteers.
 func (g *GeminiClient) ChatWithAI(ctx context.Context, message string, taskContext string) (string, error) {
-	model := g.newFreeformModel(`You are SAMAJ AI Assistant — a helpful, friendly assistant for volunteers
+	model := g.newFreeformModel(`You are RESQLINK AI Assistant — a helpful, friendly assistant for volunteers
 working on civic issues, medical emergencies, legal aid, and disaster relief.
 You provide practical, actionable guidance. Keep responses concise (2-4 paragraphs max).
 If asked about safety, always err on the side of caution.

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class SamajTheme {
-  SamajTheme._();
+class ResQLinkTheme {
+  ResQLinkTheme._();
 
   // ── Premium color palette ──
   static const Color _primarySeed = Color(0xFF6C63FF); // Vibrant indigo

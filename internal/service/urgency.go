@@ -4,7 +4,7 @@ import (
 	"math"
 	"time"
 
-	"github.com/samaj-project/samaj/internal/domain"
+	"github.com/resqlink-project/resqlink/internal/domain"
 )
 
 // Weights for the urgency formula.

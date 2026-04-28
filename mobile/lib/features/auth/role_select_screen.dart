@@ -61,7 +61,7 @@ class RoleSelectScreen extends StatelessWidget {
                     child: const Icon(Icons.people_alt_rounded, color: Colors.white, size: 28),
                   ),
                   const SizedBox(width: 12),
-                  Text('SAMAJ', style: theme.textTheme.headlineMedium?.copyWith(
+                  Text('RESQLINK', style: theme.textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.w800, letterSpacing: 1.5,
                   )),
                 ],
