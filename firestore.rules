@@ -2,56 +2,136 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper: check if user is authenticated
+    // ══════════════════════════════════════════════════
+    // Helper Functions
+    // ══════════════════════════════════════════════════
+
+    // Check if user is authenticated
     function isAuth() {
       return request.auth != null;
     }
 
-    // Helper: get user role from custom claims
+    // Get user role from custom claims
     function userRole() {
       return request.auth.token.role;
     }
 
-    // Helper: check if user has one of the given roles
+    // Check if user has one of the given roles
     function hasRole(roles) {
       return isAuth() && userRole() in roles;
     }
 
-    // Reports collection
+    // Check if user is admin
+    function isAdmin() {
+      return hasRole(['admin']);
+    }
+
+    // ══════════════════════════════════════════════════
+    // Reports Collection — Public Issue Reports
+    // ══════════════════════════════════════════════════
     match /reports/{reportId} {
-      // NGO workers can create reports
-      allow create: if hasRole(['ngo_worker', 'nagar_nigam']);
+      // Reporters and admins can create reports
+      allow create: if hasRole(['reporter', 'admin']);
 
       // All authenticated users can read reports
       allow read: if isAuth();
 
-      // Only server (admin SDK) or nagar_nigam can update
-      allow update: if hasRole(['nagar_nigam']);
+      // Only admins can update (for status, assignment)
+      // Worker service uses server SDK which bypasses these rules
+      allow update: if isAdmin();
+
+      // No client-side deletes
+      allow delete: if false;
+
+      // Sub-collection: comments (for future use)
+      match /comments/{commentId} {
+        allow read: if isAuth();
+        allow create: if isAuth();
+        allow delete: if isAuth() && request.auth.uid == resource.data.created_by;
+      }
+    }
+
+    // ══════════════════════════════════════════════════
+    // Volunteers Collection — Volunteer Profiles
+    // ══════════════════════════════════════════════════
+    match /volunteers/{volunteerId} {
+      // All authenticated users can read volunteer profiles
+      allow read: if isAuth();
+
+      // Volunteers can create own profile
+      allow create: if isAuth() && request.resource.data.uid == request.auth.uid;
+
+      // Volunteers can update own profile
+      allow update: if isAuth() && resource.data.uid == request.auth.uid;
 
       // No client-side deletes
       allow delete: if false;
     }
 
-    // Wards collection (read-only reference data)
-    match /wards/{wardId} {
-      allow read: if isAuth();
-      allow write: if false; // admin SDK only
-    }
-
-    // Volunteers collection
-    match /volunteers/{volunteerId} {
-      allow read: if isAuth();
-      allow create: if isAuth() && request.resource.data.uid == request.auth.uid;
-      allow update: if isAuth() && resource.data.uid == request.auth.uid;
-      allow delete: if false;
-    }
-
-    // Users collection
+    // ══════════════════════════════════════════════════
+    // Users Collection — User Metadata
+    // ══════════════════════════════════════════════════
     match /users/{userId} {
-      allow read: if isAuth() && (request.auth.uid == userId || hasRole(['nagar_nigam']));
+      // Users can read own profile or admins can read any
+      allow read: if isAuth() && (request.auth.uid == userId || isAdmin());
+
+      // Users create own profile
       allow create: if isAuth() && request.auth.uid == userId;
-      allow update: if isAuth() && request.auth.uid == userId;
+
+      // Users update own profile; admins can update any
+      allow update: if isAuth() && (request.auth.uid == userId || isAdmin());
+
+      // No client-side deletes
       allow delete: if false;
+    }
+
+    // ══════════════════════════════════════════════════
+    // Wards Collection — Geographic Reference Data
+    // ══════════════════════════════════════════════════
+    match /wards/{wardId} {
+      // All authenticated users can read wards
+      allow read: if isAuth();
+
+      // No client-side writes (admin SDK only)
+      allow write: if false;
+    }
+
+    // ══════════════════════════════════════════════════
+    // Case Files Collection — Specialist Case Management
+    // ══════════════════════════════════════════════════
+    match /case_files/{caseId} {
+      // Specialists can read all cases; others can read own cases
+      allow read: if isAuth() && (
+        hasRole(['specialist', 'admin']) ||
+        request.auth.uid == resource.data.assigned_specialist_uid
+      );
+
+      // Specialists and admins can create cases
+      allow create: if hasRole(['specialist', 'admin']);
+
+      // Specialists can update own cases; admins can update any
+      allow update: if isAuth() && (
+        isAdmin() ||
+        (hasRole(['specialist']) && resource.data.assigned_specialist_uid == request.auth.uid)
+      );
+
+      // No client-side deletes
+      allow delete: if false;
+
+      // Sub-collection: documents
+      match /documents/{documentId} {
+        allow read: if parent(/databases/$(database)/documents/case_files/$(caseId)).data.linked_report_ids.size() > 0 && isAuth();
+        allow create: if isAuth() && parent(/databases/$(database)/documents/case_files/$(caseId)).data.assigned_specialist_uid == request.auth.uid;
+        allow delete: if isAuth() && parent(/databases/$(database)/documents/case_files/$(caseId)).data.assigned_specialist_uid == request.auth.uid;
+      }
+    }
+
+    // ══════════════════════════════════════════════════
+    // Fallback: Deny all other operations
+    // ══════════════════════════════════════════════════
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }
+
