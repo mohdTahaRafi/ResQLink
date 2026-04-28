@@ -50,42 +50,60 @@ class _VolunteerDashboardState extends ConsumerState<VolunteerDashboard> {
   }
 
   void _showSnackBar(String msg) {
-    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    }
   }
 
   Color _statusColor(String status) {
     switch (status) {
-      case 'pending': return Colors.grey;
-      case 'accepted': return Colors.blue;
-      case 'in_progress': return Colors.orange;
-      case 'escalated': return Colors.red;
-      case 'resolved': return Colors.green;
-      default: return Colors.grey;
+      case 'pending':
+        return Colors.grey;
+      case 'accepted':
+        return Colors.blue;
+      case 'in_progress':
+        return Colors.orange;
+      case 'escalated':
+        return Colors.red;
+      case 'resolved':
+        return Colors.green;
+      default:
+        return Colors.grey;
     }
   }
 
   IconData _urgencyIcon(String urgency) {
     switch (urgency) {
-      case 'critical': return Icons.error;
-      case 'urgent': return Icons.warning_amber;
-      default: return Icons.info_outline;
+      case 'critical':
+        return Icons.error;
+      case 'urgent':
+        return Icons.warning_amber;
+      default:
+        return Icons.info_outline;
     }
   }
 
   Color _urgencyColor(String urgency) {
     switch (urgency) {
-      case 'critical': return Colors.red;
-      case 'urgent': return Colors.orange;
-      default: return Colors.green;
+      case 'critical':
+        return Colors.red;
+      case 'urgent':
+        return Colors.orange;
+      default:
+        return Colors.green;
     }
   }
 
   String _nextStatus(String current) {
     switch (current) {
-      case 'pending': return 'accepted';
-      case 'accepted': return 'in_progress';
-      case 'in_progress': return 'resolved';
-      default: return current;
+      case 'pending':
+        return 'accepted';
+      case 'accepted':
+        return 'in_progress';
+      case 'in_progress':
+        return 'resolved';
+      default:
+        return current;
     }
   }
 
@@ -108,7 +126,8 @@ class _VolunteerDashboardState extends ConsumerState<VolunteerDashboard> {
             onPressed: () async {
               await HiveStore.clearAll();
               await FirebaseAuth.instance.signOut();
-              if (mounted) context.go('/role-select');
+              if (!context.mounted) return;
+              context.go('/role-select');
             },
           ),
         ],
@@ -120,11 +139,15 @@ class _VolunteerDashboardState extends ConsumerState<VolunteerDashboard> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.assignment_outlined, size: 64, color: theme.colorScheme.outlineVariant),
+                      Icon(Icons.assignment_outlined,
+                          size: 64, color: theme.colorScheme.outlineVariant),
                       const SizedBox(height: 16),
-                      Text('No tasks assigned yet', style: theme.textTheme.bodyLarge),
-                      Text('Tasks will appear here when an NGO admin assigns you.',
-                          style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                      Text('No tasks assigned yet',
+                          style: theme.textTheme.bodyLarge),
+                      Text(
+                          'Tasks will appear here when an NGO admin assigns you.',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant)),
                     ],
                   ),
                 )
@@ -136,9 +159,12 @@ class _VolunteerDashboardState extends ConsumerState<VolunteerDashboard> {
                     itemBuilder: (context, index) {
                       final task = _tasks[index];
                       final status = (task['status'] as String?) ?? 'pending';
-                      final urgency = (task['user_urgency'] as String?) ?? 'normal';
-                      final issueType = (task['issue_type'] as String?) ?? 'civic_issue';
-                      final canAdvance = status != 'resolved' && status != 'escalated';
+                      final urgency =
+                          (task['user_urgency'] as String?) ?? 'normal';
+                      final issueType =
+                          (task['issue_type'] as String?) ?? 'civic_issue';
+                      final canAdvance =
+                          status != 'resolved' && status != 'escalated';
 
                       return Card(
                         margin: const EdgeInsets.only(bottom: 12),
@@ -150,16 +176,26 @@ class _VolunteerDashboardState extends ConsumerState<VolunteerDashboard> {
                               // Header: urgency + status
                               Row(
                                 children: [
-                                  Icon(_urgencyIcon(urgency), color: _urgencyColor(urgency), size: 20),
+                                  Icon(_urgencyIcon(urgency),
+                                      color: _urgencyColor(urgency), size: 20),
                                   const SizedBox(width: 6),
                                   Text(urgency.toUpperCase(),
-                                      style: theme.textTheme.labelSmall?.copyWith(
-                                        color: _urgencyColor(urgency), fontWeight: FontWeight.bold)),
+                                      style: theme.textTheme.labelSmall
+                                          ?.copyWith(
+                                              color: _urgencyColor(urgency),
+                                              fontWeight: FontWeight.bold)),
                                   const Spacer(),
                                   Chip(
-                                    label: Text(status.replaceAll('_', ' ').toUpperCase(),
-                                        style: TextStyle(fontSize: 10, color: _statusColor(status), fontWeight: FontWeight.bold)),
-                                    backgroundColor: _statusColor(status).withOpacity(0.1),
+                                    label: Text(
+                                        status
+                                            .replaceAll('_', ' ')
+                                            .toUpperCase(),
+                                        style: TextStyle(
+                                            fontSize: 10,
+                                            color: _statusColor(status),
+                                            fontWeight: FontWeight.bold)),
+                                    backgroundColor: _statusColor(status)
+                                        .withValues(alpha: 0.1),
                                     side: BorderSide.none,
                                     padding: EdgeInsets.zero,
                                   ),
@@ -168,12 +204,18 @@ class _VolunteerDashboardState extends ConsumerState<VolunteerDashboard> {
                               const SizedBox(height: 8),
 
                               // Issue type badge
-                              Chip(label: Text(issueType.replaceAll('_', ' ').toUpperCase(), style: const TextStyle(fontSize: 10))),
+                              Chip(
+                                  label: Text(
+                                      issueType
+                                          .replaceAll('_', ' ')
+                                          .toUpperCase(),
+                                      style: const TextStyle(fontSize: 10))),
                               const SizedBox(height: 8),
 
                               // Description
                               Text(
-                                (task['raw_text'] as String?) ?? 'No description',
+                                (task['raw_text'] as String?) ??
+                                    'No description',
                                 style: theme.textTheme.bodyMedium,
                                 maxLines: 3,
                                 overflow: TextOverflow.ellipsis,
@@ -181,13 +223,21 @@ class _VolunteerDashboardState extends ConsumerState<VolunteerDashboard> {
                               const SizedBox(height: 8),
 
                               // Location
-                              if (task['location'] != null && (task['location'] as String).isNotEmpty)
+                              if (task['location'] != null &&
+                                  (task['location'] as String).isNotEmpty)
                                 Row(
                                   children: [
-                                    Icon(Icons.location_on, size: 14, color: theme.colorScheme.onSurfaceVariant),
+                                    Icon(Icons.location_on,
+                                        size: 14,
+                                        color:
+                                            theme.colorScheme.onSurfaceVariant),
                                     const SizedBox(width: 4),
-                                    Expanded(child: Text(task['location'] as String,
-                                        style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant))),
+                                    Expanded(
+                                        child: Text(task['location'] as String,
+                                            style: theme.textTheme.bodySmall
+                                                ?.copyWith(
+                                                    color: theme.colorScheme
+                                                        .onSurfaceVariant))),
                                   ],
                                 ),
                               const SizedBox(height: 12),
@@ -198,15 +248,20 @@ class _VolunteerDashboardState extends ConsumerState<VolunteerDashboard> {
                                   if (canAdvance)
                                     Expanded(
                                       child: FilledButton.icon(
-                                        onPressed: () => _updateStatus(task['id'] as String, _nextStatus(status)),
+                                        onPressed: () => _updateStatus(
+                                            task['id'] as String,
+                                            _nextStatus(status)),
                                         icon: const Icon(Icons.check, size: 18),
-                                        label: Text('Mark ${_nextStatus(status).replaceAll("_", " ")}'),
+                                        label: Text(
+                                            'Mark ${_nextStatus(status).replaceAll("_", " ")}'),
                                       ),
                                     ),
-                                  if (canAdvance && status == 'in_progress') ...[
+                                  if (canAdvance &&
+                                      status == 'in_progress') ...[
                                     const SizedBox(width: 8),
                                     OutlinedButton(
-                                      onPressed: () => _updateStatus(task['id'] as String, 'escalated'),
+                                      onPressed: () => _updateStatus(
+                                          task['id'] as String, 'escalated'),
                                       child: const Text('Escalate'),
                                     ),
                                   ],

@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -64,7 +63,8 @@ class ApiClient {
 
   /// Fetch reports list.
   Future<List<dynamic>> getReports({int limit = 50}) async {
-    final response = await _dio.get('/api/v1/reports', queryParameters: {'limit': limit});
+    final response =
+        await _dio.get('/api/v1/reports', queryParameters: {'limit': limit});
     return response.data['reports'] ?? [];
   }
 
@@ -113,7 +113,8 @@ class ApiClient {
   }
 
   /// Ask an AI question about a case's documents.
-  Future<Map<String, dynamic>> askCaseQuestion(String caseId, String question) async {
+  Future<Map<String, dynamic>> askCaseQuestion(
+      String caseId, String question) async {
     final response = await _dio.post('/api/v1/cases/$caseId/ask', data: {
       'question': question,
     });
@@ -121,7 +122,8 @@ class ApiClient {
   }
 
   /// Upload a document to a case file.
-  Future<void> uploadCaseDocument(String caseId, String fileName, String content, String fileType) async {
+  Future<void> uploadCaseDocument(
+      String caseId, String fileName, String content, String fileType) async {
     await _dio.post('/api/v1/cases/$caseId/documents', data: {
       'file_name': fileName,
       'content': content,
@@ -154,7 +156,8 @@ class ApiClient {
   }
 
   /// Assign volunteers to a report.
-  Future<void> assignVolunteers(String reportId, List<String> volunteerIds) async {
+  Future<void> assignVolunteers(
+      String reportId, List<String> volunteerIds) async {
     await _dio.post('/api/v1/reports/$reportId/assign', data: {
       'volunteer_ids': volunteerIds,
     });
@@ -172,36 +175,43 @@ class ApiClient {
 
   /// Analyze an image using Gemini Vision.
   Future<Map<String, dynamic>> analyzeImage(String base64Image) async {
-    final response = await _dio.post('/api/v1/ai/analyze-image', data: {'image': base64Image});
+    final response = await _dio
+        .post('/api/v1/ai/analyze-image', data: {'image': base64Image});
     return response.data['analysis'];
   }
 
   /// Verify report consistency (image vs text).
-  Future<Map<String, dynamic>> verifyReport(String base64Image, String text) async {
-    final response = await _dio.post('/api/v1/ai/verify-report', data: {'image': base64Image, 'text': text});
+  Future<Map<String, dynamic>> verifyReport(
+      String base64Image, String text) async {
+    final response = await _dio.post('/api/v1/ai/verify-report',
+        data: {'image': base64Image, 'text': text});
     return response.data['verification'];
   }
 
   /// Detect duplicate reports.
   Future<Map<String, dynamic>> detectDuplicates(String text) async {
-    final response = await _dio.post('/api/v1/ai/detect-duplicates', data: {'text': text});
+    final response =
+        await _dio.post('/api/v1/ai/detect-duplicates', data: {'text': text});
     return response.data['duplicate_check'];
   }
 
   /// Generate AI action plan for a report.
   Future<Map<String, dynamic>> getActionPlan(String reportId) async {
-    final response = await _dio.post('/api/v1/ai/action-plan', data: {'report_id': reportId});
+    final response = await _dio
+        .post('/api/v1/ai/action-plan', data: {'report_id': reportId});
     return response.data['action_plan'];
   }
 
   /// Analyze sentiment of text.
   Future<Map<String, dynamic>> analyzeSentiment(String text) async {
-    final response = await _dio.post('/api/v1/ai/sentiment', data: {'text': text});
+    final response =
+        await _dio.post('/api/v1/ai/sentiment', data: {'text': text});
     return response.data['sentiment'];
   }
 
   /// Translate text between languages.
-  Future<Map<String, dynamic>> translate(String text, {String sourceLang = '', String targetLang = 'English'}) async {
+  Future<Map<String, dynamic>> translate(String text,
+      {String sourceLang = '', String targetLang = 'English'}) async {
     final response = await _dio.post('/api/v1/ai/translate', data: {
       'text': text,
       'source_lang': sourceLang,
@@ -217,7 +227,8 @@ class ApiClient {
   }
 
   /// Get AI skill recommendations for a volunteer.
-  Future<Map<String, dynamic>> getSkillRecommendations(List<String> currentSkills, List<String> completedTaskTypes) async {
+  Future<Map<String, dynamic>> getSkillRecommendations(
+      List<String> currentSkills, List<String> completedTaskTypes) async {
     final response = await _dio.post('/api/v1/ai/recommend-skills', data: {
       'current_skills': currentSkills,
       'completed_task_types': completedTaskTypes,
@@ -227,7 +238,8 @@ class ApiClient {
 
   /// OCR a document image.
   Future<Map<String, dynamic>> ocrDocument(String base64Image) async {
-    final response = await _dio.post('/api/v1/ai/ocr', data: {'image': base64Image});
+    final response =
+        await _dio.post('/api/v1/ai/ocr', data: {'image': base64Image});
     return response.data['ocr_result'];
   }
 
@@ -238,5 +250,18 @@ class ApiClient {
       'task_context': taskContext,
     });
     return response.data['response'];
+  }
+
+  // ══════════════════════════════════════════════════
+  // REVERSE GEOCODING
+  // ══════════════════════════════════════════════════
+
+  /// Reverse geocode coordinates to a location name.
+  Future<String> reverseGeocode(double latitude, double longitude) async {
+    final response = await _dio.post('/api/v1/geocode/reverse', data: {
+      'latitude': latitude,
+      'longitude': longitude,
+    });
+    return response.data['location'] as String? ?? '';
   }
 }

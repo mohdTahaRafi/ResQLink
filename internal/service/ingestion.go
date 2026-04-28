@@ -70,7 +70,6 @@ func (s *IngestionService) ProcessReport(ctx context.Context, event domain.Inges
 		{Path: "affected_population_estimate", Value: extraction.AffectedPopulationEst},
 		{Path: "summary", Value: extraction.Summary},
 		{Path: "urgency_score", Value: urgencyScore},
-		{Path: "status", Value: "processing"},
 	}
 
 	if err := s.repo.UpdateReport(ctx, event.ReportID, updates); err != nil {

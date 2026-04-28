@@ -12,6 +12,7 @@ import (
 	"log"
 	"math"
 	"net/http"
+	"net/url"
 	"os"
 	"sort"
 	"strconv"
@@ -133,7 +134,7 @@ func main() {
 	// ══════════════════════════════════════════════════
 	// REPORTER — Submit Reports
 	// ══════════════════════════════════════════════════
-	api.POST("/reports", handleCreateReport(repo, topic))
+	api.POST("/reports", handleCreateReport(repo, topic, geminiClient))
 	api.GET("/reports", handleListReports(repo))
 	// IMPORTANT: static paths must be registered before parameterized ones
 	api.GET("/reports/prioritized", handlePrioritizedReports(repo))
@@ -154,25 +155,28 @@ func main() {
 	api.GET("/cases/my", handleMyCases(repo))
 	api.POST("/cases", handleCreateCase(repo))
 	api.POST("/cases/:id/documents", handleAddDocument(repo))
-	api.POST("/cases/:id/ask", handleAskCase(repo))
-	api.POST("/cases/:id/search", handleSearchCase(repo))
+	api.POST("/cases/:id/ask", handleAskCase(repo, geminiClient))
+	api.POST("/cases/:id/search", handleSearchCase(repo, geminiClient))
 
 	// ══════════════════════════════════════════════════
 	// AI-POWERED FEATURES
 	// ══════════════════════════════════════════════════
-	if geminiClient != nil {
-		aiGroup := api.Group("/ai")
-		aiGroup.POST("/analyze-image", handleAnalyzeImage(geminiClient))
-		aiGroup.POST("/verify-report", handleVerifyReport(geminiClient))
-		aiGroup.POST("/detect-duplicates", handleDetectDuplicates(geminiClient, repo))
-		aiGroup.POST("/action-plan", handleActionPlan(geminiClient, repo))
-		aiGroup.POST("/sentiment", handleSentiment(geminiClient))
-		aiGroup.POST("/translate", handleTranslate(geminiClient))
-		aiGroup.GET("/progress-report", handleProgressReport(geminiClient, repo))
-		aiGroup.POST("/recommend-skills", handleRecommendSkills(geminiClient))
-		aiGroup.POST("/ocr", handleOCR(geminiClient))
-		aiGroup.POST("/chat", handleAIChat(geminiClient))
-	}
+	aiGroup := api.Group("/ai")
+	aiGroup.POST("/analyze-image", handleAnalyzeImage(geminiClient))
+	aiGroup.POST("/verify-report", handleVerifyReport(geminiClient))
+	aiGroup.POST("/detect-duplicates", handleDetectDuplicates(geminiClient, repo))
+	aiGroup.POST("/action-plan", handleActionPlan(geminiClient, repo))
+	aiGroup.POST("/sentiment", handleSentiment(geminiClient))
+	aiGroup.POST("/translate", handleTranslate(geminiClient))
+	aiGroup.GET("/progress-report", handleProgressReport(geminiClient, repo))
+	aiGroup.POST("/recommend-skills", handleRecommendSkills(geminiClient))
+	aiGroup.POST("/ocr", handleOCR(geminiClient))
+	aiGroup.POST("/chat", handleAIChat(geminiClient))
+
+	// ══════════════════════════════════════════════════
+	// GEOCODING
+	// ══════════════════════════════════════════════════
+	api.POST("/geocode/reverse", handleReverseGeocode(geminiClient))
 
 	// Legacy
 	api.GET("/dashboard/:role", handleDashboard(repo))
@@ -192,7 +196,7 @@ func main() {
 // REPORTER Handlers
 // ══════════════════════════════════════════════════
 
-func handleCreateReport(repo *repository.FirestoreRepo, topic *pubsub.Topic) gin.HandlerFunc {
+func handleCreateReport(repo *repository.FirestoreRepo, topic *pubsub.Topic, geminiClient *ai.GeminiClient) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		uid, _ := c.Get("uid")
 
@@ -229,6 +233,15 @@ func handleCreateReport(repo *repository.FirestoreRepo, topic *pubsub.Topic) gin
 		}
 		if req.RequiredVolunteers < 1 {
 			req.RequiredVolunteers = 1
+		}
+		if strings.TrimSpace(req.Location) == "" && (req.Latitude != 0 || req.Longitude != 0) {
+			location, provider, err := reverseGeocode(c.Request.Context(), geminiClient, req.Latitude, req.Longitude)
+			if err != nil {
+				log.Printf("create report reverse geocode skipped: %v", err)
+			} else {
+				req.Location = location
+				log.Printf("create report location resolved via %s: %s", provider, location)
+			}
 		}
 
 		report := &domain.Report{
@@ -410,9 +423,9 @@ func handleMyCases(repo *repository.FirestoreRepo) gin.HandlerFunc {
 func handleCreateCase(repo *repository.FirestoreRepo) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req struct {
-			Title       string   `json:"title"`
-			ReportIDs   []string `json:"report_ids"`
-			SpecialistUID string `json:"specialist_uid"`
+			Title         string   `json:"title"`
+			ReportIDs     []string `json:"report_ids"`
+			SpecialistUID string   `json:"specialist_uid"`
 		}
 		if err := c.ShouldBindJSON(&req); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid body"})
@@ -469,7 +482,7 @@ func handleAddDocument(repo *repository.FirestoreRepo) gin.HandlerFunc {
 	}
 }
 
-func handleAskCase(repo *repository.FirestoreRepo) gin.HandlerFunc {
+func handleAskCase(repo *repository.FirestoreRepo, geminiClient *ai.GeminiClient) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		caseID := c.Param("id")
 		var req struct {
@@ -490,7 +503,6 @@ func handleAskCase(repo *repository.FirestoreRepo) gin.HandlerFunc {
 		var contextBuilder strings.Builder
 		for _, doc := range cf.Documents {
 			contextBuilder.WriteString(fmt.Sprintf("--- Document: %s ---\n", doc.FileName))
-			// For text content, use directly; for images, note as image
 			if doc.FileType == "text" || doc.FileType == "pdf" {
 				contextBuilder.WriteString(doc.Content)
 			} else {
@@ -512,24 +524,33 @@ func handleAskCase(repo *repository.FirestoreRepo) gin.HandlerFunc {
 			docContext = "No documents uploaded yet."
 		}
 
-		// Use Gemini AI to answer (simplified — uses document context as prompt)
-		answer := fmt.Sprintf(
-			"Based on the case documents and reports, here is what I found regarding your question \"%s\":\n\n"+
-				"The case contains %d documents and %d linked reports. "+
-				"Please upload more documents for more comprehensive answers. "+
-				"Full AI integration with Gemini will provide semantic understanding of PDFs and images.",
-			req.Question, len(cf.Documents), len(cf.ReportIDs))
+		// Use Gemini AI for real AI-powered Q&A
+		var answer string
+		if geminiClient != nil {
+			answer, err = geminiClient.AskCaseQuestion(c.Request.Context(), docContext, req.Question)
+			if err != nil {
+				log.Printf("Gemini case Q&A error: %v", err)
+				answer = fmt.Sprintf(
+					"AI analysis is temporarily unavailable. The case contains %d documents and %d linked reports.",
+					len(cf.Documents), len(cf.ReportIDs))
+			}
+		} else {
+			answer = fmt.Sprintf(
+				"AI features are not enabled. The case contains %d documents and %d linked reports. "+
+					"Please configure Gemini AI to enable intelligent Q&A.",
+				len(cf.Documents), len(cf.ReportIDs))
+		}
 
 		c.JSON(http.StatusOK, gin.H{
-			"answer":     answer,
-			"case_id":    caseID,
-			"doc_count":  len(cf.Documents),
+			"answer":        answer,
+			"case_id":       caseID,
+			"doc_count":     len(cf.Documents),
 			"context_chars": len(docContext),
 		})
 	}
 }
 
-func handleSearchCase(repo *repository.FirestoreRepo) gin.HandlerFunc {
+func handleSearchCase(repo *repository.FirestoreRepo, geminiClient *ai.GeminiClient) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		caseID := c.Param("id")
 		var req struct {
@@ -546,13 +567,30 @@ func handleSearchCase(repo *repository.FirestoreRepo) gin.HandlerFunc {
 			return
 		}
 
-		// Simple keyword search across documents
+		// Build document context
+		var contextBuilder strings.Builder
+		for _, doc := range cf.Documents {
+			contextBuilder.WriteString(fmt.Sprintf("--- Document: %s ---\n%s\n\n", doc.FileName, doc.Content))
+		}
+		docContext := contextBuilder.String()
+
+		// Use Gemini AI for semantic search if available
+		if geminiClient != nil && docContext != "" {
+			results, err := geminiClient.SemanticSearch(c.Request.Context(), docContext, req.Query)
+			if err != nil {
+				log.Printf("Gemini semantic search error: %v, falling back to keyword search", err)
+			} else {
+				c.JSON(http.StatusOK, gin.H{"results": results, "count": len(results)})
+				return
+			}
+		}
+
+		// Fallback: keyword search across documents
 		var results []gin.H
 		queryLower := strings.ToLower(req.Query)
 		for _, doc := range cf.Documents {
 			contentLower := strings.ToLower(doc.Content)
 			if strings.Contains(contentLower, queryLower) {
-				// Find excerpt around match
 				idx := strings.Index(contentLower, queryLower)
 				start := idx - 100
 				if start < 0 {
@@ -574,13 +612,120 @@ func handleSearchCase(repo *repository.FirestoreRepo) gin.HandlerFunc {
 	}
 }
 
+func ensureAIAvailable(c *gin.Context, gemini *ai.GeminiClient) bool {
+	if gemini != nil {
+		return true
+	}
+	c.JSON(http.StatusServiceUnavailable, gin.H{
+		"error": "AI service unavailable. Configure GCP_PROJECT_ID, GCP_LOCATION, and Vertex AI credentials.",
+	})
+	return false
+}
+
+// ══════════════════════════════════════════════════
+// GEOCODING Handler
+// ══════════════════════════════════════════════════
+
+func handleReverseGeocode(geminiClient *ai.GeminiClient) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var req struct {
+			Latitude  float64 `json:"latitude"`
+			Longitude float64 `json:"longitude"`
+		}
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid body, need latitude and longitude"})
+			return
+		}
+
+		if req.Latitude == 0 && req.Longitude == 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "coordinates cannot both be zero"})
+			return
+		}
+		if req.Latitude < -90 || req.Latitude > 90 || req.Longitude < -180 || req.Longitude > 180 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "coordinates are outside valid latitude/longitude range"})
+			return
+		}
+
+		location, provider, err := reverseGeocode(c.Request.Context(), geminiClient, req.Latitude, req.Longitude)
+		if err != nil {
+			log.Printf("Reverse geocode error: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "could not determine location"})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"location":  location,
+			"latitude":  req.Latitude,
+			"longitude": req.Longitude,
+			"provider":  provider,
+		})
+	}
+}
+
+func reverseGeocode(ctx context.Context, geminiClient *ai.GeminiClient, lat, lng float64) (string, string, error) {
+	if apiKey := os.Getenv("GOOGLE_MAPS_API_KEY"); apiKey != "" {
+		location, err := reverseGeocodeWithGoogle(ctx, apiKey, lat, lng)
+		if err != nil {
+			log.Printf("Google reverse geocode failed, falling back to Gemini: %v", err)
+		} else if location != "" {
+			return location, "google_maps", nil
+		}
+	}
+
+	if geminiClient == nil {
+		return "", "", fmt.Errorf("no reverse geocoding provider configured")
+	}
+	location, err := geminiClient.ReverseGeocode(ctx, lat, lng)
+	return location, "gemini", err
+}
+
+func reverseGeocodeWithGoogle(ctx context.Context, apiKey string, lat, lng float64) (string, error) {
+	values := url.Values{}
+	values.Set("latlng", fmt.Sprintf("%.8f,%.8f", lat, lng))
+	values.Set("key", apiKey)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://maps.googleapis.com/maps/api/geocode/json?"+values.Encode(), nil)
+	if err != nil {
+		return "", err
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("google geocode HTTP %d", resp.StatusCode)
+	}
+
+	var result struct {
+		Status       string `json:"status"`
+		ErrorMessage string `json:"error_message"`
+		Results      []struct {
+			FormattedAddress string `json:"formatted_address"`
+		} `json:"results"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return "", err
+	}
+	if result.Status != "OK" {
+		if result.ErrorMessage != "" {
+			return "", fmt.Errorf("google geocode %s: %s", result.Status, result.ErrorMessage)
+		}
+		return "", fmt.Errorf("google geocode %s", result.Status)
+	}
+	if len(result.Results) == 0 || strings.TrimSpace(result.Results[0].FormattedAddress) == "" {
+		return "", fmt.Errorf("google geocode returned no address")
+	}
+	return strings.TrimSpace(result.Results[0].FormattedAddress), nil
+}
+
 // ══════════════════════════════════════════════════
 // NGO ADMIN Handlers
 // ══════════════════════════════════════════════════
 
 func handlePrioritizedReports(repo *repository.FirestoreRepo) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		reports, err := repo.GetAllReports(c.Request.Context(), 200)
+		reports, err := repo.GetAllReports(c.Request.Context(), 0)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch reports"})
 			return
@@ -755,6 +900,9 @@ func handleMatchVolunteers(repo *repository.FirestoreRepo) gin.HandlerFunc {
 // 1. Multimodal Image Analysis
 func handleAnalyzeImage(gemini *ai.GeminiClient) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		if !ensureAIAvailable(c, gemini) {
+			return
+		}
 		var req struct {
 			Image string `json:"image"` // base64 image
 		}
@@ -775,6 +923,9 @@ func handleAnalyzeImage(gemini *ai.GeminiClient) gin.HandlerFunc {
 // 2. AI Report Verification
 func handleVerifyReport(gemini *ai.GeminiClient) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		if !ensureAIAvailable(c, gemini) {
+			return
+		}
 		var req struct {
 			Image string `json:"image"` // base64
 			Text  string `json:"text"`
@@ -796,6 +947,9 @@ func handleVerifyReport(gemini *ai.GeminiClient) gin.HandlerFunc {
 // 3. Duplicate Report Detection
 func handleDetectDuplicates(gemini *ai.GeminiClient, repo *repository.FirestoreRepo) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		if !ensureAIAvailable(c, gemini) {
+			return
+		}
 		var req struct {
 			Text string `json:"text"`
 		}
@@ -830,6 +984,9 @@ func handleDetectDuplicates(gemini *ai.GeminiClient, repo *repository.FirestoreR
 // 4. AI-Generated Action Plans
 func handleActionPlan(gemini *ai.GeminiClient, repo *repository.FirestoreRepo) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		if !ensureAIAvailable(c, gemini) {
+			return
+		}
 		var req struct {
 			ReportID string `json:"report_id"`
 		}
@@ -855,6 +1012,9 @@ func handleActionPlan(gemini *ai.GeminiClient, repo *repository.FirestoreRepo) g
 // 5. Sentiment & Emotion Analysis
 func handleSentiment(gemini *ai.GeminiClient) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		if !ensureAIAvailable(c, gemini) {
+			return
+		}
 		var req struct {
 			Text string `json:"text"`
 		}
@@ -875,6 +1035,9 @@ func handleSentiment(gemini *ai.GeminiClient) gin.HandlerFunc {
 // 6. Real-Time Translation
 func handleTranslate(gemini *ai.GeminiClient) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		if !ensureAIAvailable(c, gemini) {
+			return
+		}
 		var req struct {
 			Text       string `json:"text"`
 			SourceLang string `json:"source_lang"`
@@ -903,6 +1066,9 @@ func handleTranslate(gemini *ai.GeminiClient) gin.HandlerFunc {
 // 7. AI Progress Report
 func handleProgressReport(gemini *ai.GeminiClient, repo *repository.FirestoreRepo) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		if !ensureAIAvailable(c, gemini) {
+			return
+		}
 		reports, err := repo.GetAllReports(c.Request.Context(), 100)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch reports"})
@@ -921,6 +1087,9 @@ func handleProgressReport(gemini *ai.GeminiClient, repo *repository.FirestoreRep
 // 8. Volunteer Skill Recommendations
 func handleRecommendSkills(gemini *ai.GeminiClient) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		if !ensureAIAvailable(c, gemini) {
+			return
+		}
 		var req struct {
 			CurrentSkills      []string `json:"current_skills"`
 			CompletedTaskTypes []string `json:"completed_task_types"`
@@ -942,6 +1111,9 @@ func handleRecommendSkills(gemini *ai.GeminiClient) gin.HandlerFunc {
 // 9. Document OCR
 func handleOCR(gemini *ai.GeminiClient) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		if !ensureAIAvailable(c, gemini) {
+			return
+		}
 		var req struct {
 			Image string `json:"image"` // base64
 		}
@@ -962,6 +1134,9 @@ func handleOCR(gemini *ai.GeminiClient) gin.HandlerFunc {
 // 10. AI Chatbot
 func handleAIChat(gemini *ai.GeminiClient) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		if !ensureAIAvailable(c, gemini) {
+			return
+		}
 		var req struct {
 			Message     string `json:"message"`
 			TaskContext string `json:"task_context"`

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import '../../data/local/hive_store.dart';
 
 class RoleSelectScreen extends StatelessWidget {
@@ -55,26 +54,32 @@ class RoleSelectScreen extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(colors: [Color(0xFF6C63FF), Color(0xFF00BFA5)]),
+                      gradient: const LinearGradient(
+                          colors: [Color(0xFF6C63FF), Color(0xFF00BFA5)]),
                       borderRadius: BorderRadius.circular(14),
                     ),
-                    child: const Icon(Icons.people_alt_rounded, color: Colors.white, size: 28),
+                    child: const Icon(Icons.people_alt_rounded,
+                        color: Colors.white, size: 28),
                   ),
                   const SizedBox(width: 12),
-                  Text('SAMAJ', style: theme.textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.w800, letterSpacing: 1.5,
-                  )),
+                  Text('SAMAJ',
+                      style: theme.textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.5,
+                      )),
                 ],
               ),
               const SizedBox(height: 32),
               Text(
                 'Choose your role',
-                style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+                style: theme.textTheme.headlineSmall
+                    ?.copyWith(fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 6),
               Text(
                 'Select how you want to use the platform.\nYou\'ll sign in on the next screen.',
-                style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                style: theme.textTheme.bodyMedium
+                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
               ),
               const SizedBox(height: 28),
               Expanded(
@@ -153,7 +158,7 @@ class _RoleCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(14),
                   boxShadow: [
                     BoxShadow(
-                      color: option.gradient.first.withOpacity(0.3),
+                      color: option.gradient.first.withValues(alpha: 0.3),
                       blurRadius: 8,
                       offset: const Offset(0, 3),
                     ),
@@ -166,21 +171,26 @@ class _RoleCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(option.title, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                    Text(option.title,
+                        style: theme.textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w700)),
                     const SizedBox(height: 3),
-                    Text(option.subtitle, style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    )),
+                    Text(option.subtitle,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        )),
                   ],
                 ),
               ),
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: option.gradient.first.withOpacity(isDark ? 0.2 : 0.1),
+                  color: option.gradient.first
+                      .withValues(alpha: isDark ? 0.2 : 0.1),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(Icons.arrow_forward_ios, size: 14, color: option.gradient.first),
+                child: Icon(Icons.arrow_forward_ios,
+                    size: 14, color: option.gradient.first),
               ),
             ],
           ),

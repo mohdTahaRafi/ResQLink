@@ -43,7 +43,8 @@ class SamajTheme {
       useMaterial3: true,
       colorScheme: colorScheme,
       textTheme: textTheme,
-      scaffoldBackgroundColor: isDark ? const Color(0xFF0D0D1A) : const Color(0xFFF5F6FA),
+      scaffoldBackgroundColor:
+          isDark ? const Color(0xFF0D0D1A) : const Color(0xFFF5F6FA),
       appBarTheme: AppBarTheme(
         centerTitle: true,
         elevation: 0,
@@ -58,21 +59,25 @@ class SamajTheme {
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: isDark ? BorderSide(color: Colors.white.withOpacity(0.06)) : BorderSide.none,
+          side: isDark
+              ? BorderSide(color: Colors.white.withValues(alpha: 0.06))
+              : BorderSide.none,
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          side: BorderSide(color: colorScheme.outline.withOpacity(0.3)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          side: BorderSide(color: colorScheme.outline.withValues(alpha: 0.3)),
         ),
       ),
       chipTheme: ChipThemeData(
@@ -88,21 +93,27 @@ class SamajTheme {
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: isDark ? Colors.white.withOpacity(0.08) : Colors.transparent),
+          borderSide: BorderSide(
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.08)
+                  : Colors.transparent),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: colorScheme.primary, width: 2),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
       dividerTheme: DividerThemeData(
-        color: isDark ? Colors.white.withOpacity(0.06) : Colors.black.withOpacity(0.06),
+        color: isDark
+            ? Colors.white.withValues(alpha: 0.06)
+            : Colors.black.withValues(alpha: 0.06),
       ),
       tabBarTheme: TabBarThemeData(
         indicatorColor: colorScheme.primary,
         labelColor: colorScheme.primary,
-        unselectedLabelColor: colorScheme.onSurface.withOpacity(0.5),
+        unselectedLabelColor: colorScheme.onSurface.withValues(alpha: 0.5),
         indicatorSize: TabBarIndicatorSize.label,
       ),
       bottomSheetTheme: BottomSheetThemeData(

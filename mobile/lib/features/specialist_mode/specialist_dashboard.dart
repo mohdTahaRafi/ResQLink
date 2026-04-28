@@ -1,6 +1,5 @@
 import '../../data/local/hive_store.dart';
 import 'dart:convert';
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -13,10 +12,12 @@ class SpecialistDashboard extends ConsumerStatefulWidget {
   const SpecialistDashboard({super.key});
 
   @override
-  ConsumerState<SpecialistDashboard> createState() => _SpecialistDashboardState();
+  ConsumerState<SpecialistDashboard> createState() =>
+      _SpecialistDashboardState();
 }
 
-class _SpecialistDashboardState extends ConsumerState<SpecialistDashboard> with SingleTickerProviderStateMixin {
+class _SpecialistDashboardState extends ConsumerState<SpecialistDashboard>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   List<Map<String, dynamic>> _cases = [];
   bool _isLoading = true;
@@ -79,12 +80,17 @@ class _SpecialistDashboardState extends ConsumerState<SpecialistDashboard> with 
       final api = ref.read(apiClientProvider);
       final response = await api.askCaseQuestion(_selectedCaseId!, question);
       setState(() {
-        _chatMessages.add(_ChatMessage(text: response['answer'] as String? ?? 'No answer found.', isUser: false));
+        _chatMessages.add(_ChatMessage(
+            text: response['answer'] as String? ?? 'No answer found.',
+            isUser: false));
         _isChatLoading = false;
       });
     } catch (e) {
       setState(() {
-        _chatMessages.add(_ChatMessage(text: 'Error: Could not get answer. Make sure documents are uploaded.', isUser: false));
+        _chatMessages.add(_ChatMessage(
+            text:
+                'Error: Could not get answer. Make sure documents are uploaded.',
+            isUser: false));
         _isChatLoading = false;
       });
     }
@@ -97,15 +103,18 @@ class _SpecialistDashboardState extends ConsumerState<SpecialistDashboard> with 
     }
 
     final picker = ImagePicker();
-    final file = await picker.pickImage(source: ImageSource.gallery, maxWidth: 1200, imageQuality: 60);
+    final file = await picker.pickImage(
+        source: ImageSource.gallery, maxWidth: 1200, imageQuality: 60);
     if (file == null) return;
 
     final bytes = await file.readAsBytes();
-    final base64Content = 'data:image/${file.name.split('.').last};base64,${base64Encode(bytes)}';
+    final base64Content =
+        'data:image/${file.name.split('.').last};base64,${base64Encode(bytes)}';
 
     try {
       final api = ref.read(apiClientProvider);
-      await api.uploadCaseDocument(_selectedCaseId!, file.name, base64Content, 'image');
+      await api.uploadCaseDocument(
+          _selectedCaseId!, file.name, base64Content, 'image');
       _showSnackBar('Document uploaded & indexed');
       _loadCases();
     } catch (e) {
@@ -114,7 +123,9 @@ class _SpecialistDashboardState extends ConsumerState<SpecialistDashboard> with 
   }
 
   void _showSnackBar(String msg) {
-    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    }
   }
 
   @override
@@ -136,7 +147,8 @@ class _SpecialistDashboardState extends ConsumerState<SpecialistDashboard> with 
             onPressed: () async {
               await HiveStore.clearAll();
               await FirebaseAuth.instance.signOut();
-              if (mounted) context.go('/role-select');
+              if (!context.mounted) return;
+              context.go('/role-select');
             },
           ),
         ],
@@ -169,11 +181,13 @@ class _SpecialistDashboardState extends ConsumerState<SpecialistDashboard> with 
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.folder_off, size: 64, color: theme.colorScheme.outlineVariant),
+            Icon(Icons.folder_off,
+                size: 64, color: theme.colorScheme.outlineVariant),
             const SizedBox(height: 16),
             Text('No cases assigned yet', style: theme.textTheme.bodyLarge),
             Text('Cases will appear when an NGO admin assigns you.',
-                style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                style: theme.textTheme.bodySmall
+                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
           ],
         ),
       );
@@ -201,23 +215,36 @@ class _SpecialistDashboardState extends ConsumerState<SpecialistDashboard> with 
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.folder_special, color: theme.colorScheme.primary),
+                      Icon(Icons.folder_special,
+                          color: theme.colorScheme.primary),
                       const SizedBox(width: 8),
-                      Expanded(child: Text(
-                        (caseFile['title'] as String?) ?? 'Case #${caseFile['id']}',
-                        style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                      Expanded(
+                          child: Text(
+                        (caseFile['title'] as String?) ??
+                            'Case #${caseFile['id']}',
+                        style: theme.textTheme.titleSmall
+                            ?.copyWith(fontWeight: FontWeight.w600),
                       )),
                       Chip(
-                        label: Text(status.toUpperCase(), style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold,
-                          color: status == 'open' ? Colors.blue : Colors.green)),
-                        backgroundColor: (status == 'open' ? Colors.blue : Colors.green).withOpacity(0.1),
-                        side: BorderSide.none, padding: EdgeInsets.zero,
+                        label: Text(status.toUpperCase(),
+                            style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: status == 'open'
+                                    ? Colors.blue
+                                    : Colors.green)),
+                        backgroundColor:
+                            (status == 'open' ? Colors.blue : Colors.green)
+                                .withValues(alpha: 0.1),
+                        side: BorderSide.none,
+                        padding: EdgeInsets.zero,
                       ),
                     ],
                   ),
                   const SizedBox(height: 8),
                   Text('$docs documents attached',
-                      style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant)),
                   const SizedBox(height: 8),
                   Row(
                     children: [
@@ -229,7 +256,8 @@ class _SpecialistDashboardState extends ConsumerState<SpecialistDashboard> with 
                       const SizedBox(width: 8),
                       FilledButton.icon(
                         onPressed: () {
-                          setState(() => _selectedCaseId = caseFile['id'] as String?);
+                          setState(() =>
+                              _selectedCaseId = caseFile['id'] as String?);
                           _tabController.animateTo(1);
                         },
                         icon: const Icon(Icons.psychology, size: 16),
@@ -263,10 +291,14 @@ class _SpecialistDashboardState extends ConsumerState<SpecialistDashboard> with 
                     value: _selectedCaseId,
                     isExpanded: true,
                     underline: const SizedBox(),
-                    items: _cases.map((c) => DropdownMenuItem(
-                      value: c['id'] as String?,
-                      child: Text((c['title'] as String?) ?? 'Case ${c['id']}', overflow: TextOverflow.ellipsis),
-                    )).toList(),
+                    items: _cases
+                        .map((c) => DropdownMenuItem(
+                              value: c['id'] as String?,
+                              child: Text(
+                                  (c['title'] as String?) ?? 'Case ${c['id']}',
+                                  overflow: TextOverflow.ellipsis),
+                            ))
+                        .toList(),
                     onChanged: (v) => setState(() => _selectedCaseId = v),
                   ),
                 ),
@@ -281,12 +313,15 @@ class _SpecialistDashboardState extends ConsumerState<SpecialistDashboard> with 
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.psychology, size: 64, color: theme.colorScheme.outlineVariant),
+                      Icon(Icons.psychology,
+                          size: 64, color: theme.colorScheme.outlineVariant),
                       const SizedBox(height: 16),
-                      Text('Ask questions about your case documents', style: theme.textTheme.bodyLarge),
+                      Text('Ask questions about your case documents',
+                          style: theme.textTheme.bodyLarge),
                       const SizedBox(height: 4),
                       Text('Powered by Gemini AI semantic search',
-                          style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant)),
                     ],
                   ),
                 )
@@ -302,17 +337,25 @@ class _SpecialistDashboardState extends ConsumerState<SpecialistDashboard> with 
                     }
                     final msg = _chatMessages[index];
                     return Align(
-                      alignment: msg.isUser ? Alignment.centerRight : Alignment.centerLeft,
+                      alignment: msg.isUser
+                          ? Alignment.centerRight
+                          : Alignment.centerLeft,
                       child: Container(
                         margin: const EdgeInsets.only(bottom: 8),
                         padding: const EdgeInsets.all(14),
-                        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
+                        constraints: BoxConstraints(
+                            maxWidth: MediaQuery.of(context).size.width * 0.75),
                         decoration: BoxDecoration(
-                          color: msg.isUser ? theme.colorScheme.primary : theme.colorScheme.surfaceContainerHighest,
+                          color: msg.isUser
+                              ? theme.colorScheme.primary
+                              : theme.colorScheme.surfaceContainerHighest,
                           borderRadius: BorderRadius.circular(16),
                         ),
-                        child: Text(msg.text, style: TextStyle(
-                          color: msg.isUser ? theme.colorScheme.onPrimary : theme.colorScheme.onSurface)),
+                        child: Text(msg.text,
+                            style: TextStyle(
+                                color: msg.isUser
+                                    ? theme.colorScheme.onPrimary
+                                    : theme.colorScheme.onSurface)),
                       ),
                     );
                   },
@@ -324,7 +367,12 @@ class _SpecialistDashboardState extends ConsumerState<SpecialistDashboard> with 
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: theme.colorScheme.surface,
-            boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4, offset: const Offset(0, -2))],
+            boxShadow: [
+              BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 4,
+                  offset: const Offset(0, -2))
+            ],
           ),
           child: Row(
             children: [
@@ -334,8 +382,10 @@ class _SpecialistDashboardState extends ConsumerState<SpecialistDashboard> with 
                   onSubmitted: (_) => _askQuestion(),
                   decoration: InputDecoration(
                     hintText: 'Ask about your case documents...',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(24)),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24)),
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 10),
                   ),
                 ),
               ),
@@ -363,8 +413,10 @@ class _SpecialistDashboardState extends ConsumerState<SpecialistDashboard> with 
             decoration: InputDecoration(
               hintText: 'Search within a specific document...',
               prefixIcon: const Icon(Icons.search),
-              suffixIcon: IconButton(icon: const Icon(Icons.send), onPressed: _performDocSearch),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              suffixIcon: IconButton(
+                  icon: const Icon(Icons.send), onPressed: _performDocSearch),
+              border:
+                  OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             ),
           ),
         ),
@@ -374,11 +426,14 @@ class _SpecialistDashboardState extends ConsumerState<SpecialistDashboard> with 
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.find_in_page, size: 64, color: theme.colorScheme.outlineVariant),
+                      Icon(Icons.find_in_page,
+                          size: 64, color: theme.colorScheme.outlineVariant),
                       const SizedBox(height: 16),
-                      Text('Search inside documents', style: theme.textTheme.bodyLarge),
+                      Text('Search inside documents',
+                          style: theme.textTheme.bodyLarge),
                       Text('Find specific sections within a single document',
-                          style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant)),
                     ],
                   ),
                 )
@@ -395,13 +450,16 @@ class _SpecialistDashboardState extends ConsumerState<SpecialistDashboard> with 
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(result['file_name'] as String? ?? 'Document',
-                                style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
+                                style: theme.textTheme.titleSmall
+                                    ?.copyWith(fontWeight: FontWeight.w600)),
                             const SizedBox(height: 4),
                             Text(result['excerpt'] as String? ?? '',
                                 style: theme.textTheme.bodySmall),
                             const SizedBox(height: 4),
-                            Text('Relevance: ${((result['score'] as double?) ?? 0 * 100).toStringAsFixed(0)}%',
-                                style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.primary)),
+                            Text(
+                                'Relevance: ${((result['score'] as double?) ?? 0 * 100).toStringAsFixed(0)}%',
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                    color: theme.colorScheme.primary)),
                           ],
                         ),
                       ),
@@ -417,8 +475,10 @@ class _SpecialistDashboardState extends ConsumerState<SpecialistDashboard> with 
     if (_docSearchController.text.isEmpty || _selectedCaseId == null) return;
     try {
       final api = ref.read(apiClientProvider);
-      final results = await api.searchCaseDocuments(_selectedCaseId!, _docSearchController.text);
-      setState(() => _docSearchResults = List<Map<String, dynamic>>.from(results));
+      final results = await api.searchCaseDocuments(
+          _selectedCaseId!, _docSearchController.text);
+      setState(
+          () => _docSearchResults = List<Map<String, dynamic>>.from(results));
     } catch (e) {
       _showSnackBar('Search failed');
     }

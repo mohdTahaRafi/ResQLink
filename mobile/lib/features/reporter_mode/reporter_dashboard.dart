@@ -24,10 +24,15 @@ class ReporterDashboard extends ConsumerStatefulWidget {
 class _ReporterDashboardState extends ConsumerState<ReporterDashboard> {
   final _descriptionController = TextEditingController();
   final _locationController = TextEditingController();
+  final _latitudeController = TextEditingController();
+  final _longitudeController = TextEditingController();
   final _volunteerCountController = TextEditingController(text: '1');
   final List<Uint8List> _selectedImages = [];
   bool _isSubmitting = false;
   bool _isGettingLocation = false;
+  bool _isResolvingLocation = false;
+  bool _updatingCoordinateFields = false;
+  Timer? _coordinateDebounce;
 
   String _issueType = 'civic_issue';
   String _urgency = 'normal';
@@ -50,9 +55,19 @@ class _ReporterDashboardState extends ConsumerState<ReporterDashboard> {
   };
 
   @override
+  void initState() {
+    super.initState();
+    _latitudeController.addListener(_onCoordinateTextChanged);
+    _longitudeController.addListener(_onCoordinateTextChanged);
+  }
+
+  @override
   void dispose() {
+    _coordinateDebounce?.cancel();
     _descriptionController.dispose();
     _locationController.dispose();
+    _latitudeController.dispose();
+    _longitudeController.dispose();
     _volunteerCountController.dispose();
     super.dispose();
   }
@@ -66,6 +81,70 @@ class _ReporterDashboardState extends ConsumerState<ReporterDashboard> {
     }
   }
 
+  double? _parseCoordinate(String value) {
+    return double.tryParse(value.trim().replaceAll(',', ''));
+  }
+
+  void _setCoordinates(double latitude, double longitude) {
+    _latitude = latitude;
+    _longitude = longitude;
+    final latText = latitude.toStringAsFixed(6);
+    final lngText = longitude.toStringAsFixed(6);
+    _updatingCoordinateFields = true;
+    if (_latitudeController.text != latText) _latitudeController.text = latText;
+    if (_longitudeController.text != lngText) {
+      _longitudeController.text = lngText;
+    }
+    _updatingCoordinateFields = false;
+  }
+
+  void _onCoordinateTextChanged() {
+    if (_updatingCoordinateFields) return;
+    final lat = _parseCoordinate(_latitudeController.text);
+    final lng = _parseCoordinate(_longitudeController.text);
+    if (lat == null || lng == null) return;
+    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return;
+
+    setState(() {
+      _latitude = lat;
+      _longitude = lng;
+    });
+
+    _coordinateDebounce?.cancel();
+    _coordinateDebounce = Timer(const Duration(milliseconds: 700), () {
+      _resolveLocationForCoordinates(lat, lng, overwriteExisting: true);
+    });
+  }
+
+  Future<void> _resolveLocationForCoordinates(
+    double latitude,
+    double longitude, {
+    bool overwriteExisting = false,
+  }) async {
+    if (_isResolvingLocation) return;
+    if (!overwriteExisting && _locationController.text.trim().isNotEmpty) {
+      return;
+    }
+
+    setState(() => _isResolvingLocation = true);
+    try {
+      final api = ref.read(apiClientProvider);
+      final location = await api.reverseGeocode(latitude, longitude);
+      if (!mounted) return;
+      if (location.trim().isNotEmpty &&
+          (overwriteExisting || _locationController.text.trim().isEmpty)) {
+        _locationController.text = location.trim();
+      }
+    } catch (e) {
+      debugPrint('Reverse geocode error: $e');
+      if (mounted && _locationController.text.trim().isEmpty) {
+        _showSnackBar('Could not determine location name');
+      }
+    } finally {
+      if (mounted) setState(() => _isResolvingLocation = false);
+    }
+  }
+
   Future<void> _getLocation() async {
     setState(() => _isGettingLocation = true);
     try {
@@ -75,11 +154,13 @@ class _ReporterDashboardState extends ConsumerState<ReporterDashboard> {
         nav.geolocation.getCurrentPosition(
           ((web.GeolocationPosition pos) {
             setState(() {
-              _latitude = pos.coords.latitude.toDouble();
-              _longitude = pos.coords.longitude.toDouble();
+              _setCoordinates(pos.coords.latitude.toDouble(),
+                  pos.coords.longitude.toDouble());
               _isGettingLocation = false;
             });
-            _showSnackBar('Location captured!');
+            _showSnackBar('Coordinates captured!');
+            _resolveLocationForCoordinates(_latitude!, _longitude!,
+                overwriteExisting: true);
             completer.complete();
           }).toJS,
           ((web.GeolocationPositionError err) {
@@ -88,7 +169,8 @@ class _ReporterDashboardState extends ConsumerState<ReporterDashboard> {
             completer.complete();
           }).toJS,
         );
-        await completer.future.timeout(const Duration(seconds: 10), onTimeout: () {
+        await completer.future.timeout(const Duration(seconds: 10),
+            onTimeout: () {
           setState(() => _isGettingLocation = false);
           _showSnackBar('Location timeout.');
         });
@@ -104,17 +186,30 @@ class _ReporterDashboardState extends ConsumerState<ReporterDashboard> {
       _showSnackBar('Please describe the issue');
       return;
     }
-    if (_locationController.text.isEmpty) {
-      _showSnackBar('Location is required');
+    final typedLatitude = _parseCoordinate(_latitudeController.text);
+    final typedLongitude = _parseCoordinate(_longitudeController.text);
+    if (typedLatitude != null && typedLongitude != null) {
+      _latitude = typedLatitude;
+      _longitude = typedLongitude;
+    }
+    if (_locationController.text.trim().isEmpty && _latitude == null) {
+      _showSnackBar('Enter a location or coordinates');
       return;
     }
 
     setState(() => _isSubmitting = true);
+    if (_locationController.text.trim().isEmpty &&
+        _latitude != null &&
+        _longitude != null) {
+      await _resolveLocationForCoordinates(_latitude!, _longitude!,
+          overwriteExisting: true);
+    }
 
     // Encode first image as base64 (API supports one for now)
     String mediaBase64 = '';
     if (_selectedImages.isNotEmpty) {
-      mediaBase64 = 'data:image/jpeg;base64,${base64Encode(_selectedImages.first)}';
+      mediaBase64 =
+          'data:image/jpeg;base64,${base64Encode(_selectedImages.first)}';
     }
 
     try {
@@ -123,8 +218,8 @@ class _ReporterDashboardState extends ConsumerState<ReporterDashboard> {
         rawText: _descriptionController.text,
         mediaType: _selectedImages.isNotEmpty ? 'image' : 'text',
         mediaUrl: mediaBase64,
-        latitude: _latitude ?? 26.8467,
-        longitude: _longitude ?? 80.9462,
+        latitude: _latitude ?? 0,
+        longitude: _longitude ?? 0,
         issueType: _issueType,
         userUrgency: _urgency,
         requiredVolunteers: int.tryParse(_volunteerCountController.text) ?? 1,
@@ -133,11 +228,15 @@ class _ReporterDashboardState extends ConsumerState<ReporterDashboard> {
       _showSnackBar('Issue reported! ID: ${response['id']}');
       _descriptionController.clear();
       _locationController.clear();
+      _latitudeController.clear();
+      _longitudeController.clear();
       _volunteerCountController.text = '1';
       setState(() {
         _selectedImages.clear();
         _issueType = 'civic_issue';
         _urgency = 'normal';
+        _latitude = null;
+        _longitude = null;
       });
     } catch (e) {
       debugPrint('API ERROR: $e');
@@ -148,7 +247,9 @@ class _ReporterDashboardState extends ConsumerState<ReporterDashboard> {
   }
 
   void _showSnackBar(String msg) {
-    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    }
   }
 
   @override
@@ -169,7 +270,8 @@ class _ReporterDashboardState extends ConsumerState<ReporterDashboard> {
             onPressed: () async {
               await HiveStore.clearAll();
               await FirebaseAuth.instance.signOut();
-              if (mounted) context.go('/role-select');
+              if (!context.mounted) return;
+              context.go('/role-select');
             },
           ),
         ],
@@ -180,7 +282,9 @@ class _ReporterDashboardState extends ConsumerState<ReporterDashboard> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // --- Photo Upload ---
-            Text('Photos', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
+            Text('Photos',
+                style: theme.textTheme.titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
             GestureDetector(
               onTap: _pickImages,
@@ -191,15 +295,18 @@ class _ReporterDashboardState extends ConsumerState<ReporterDashboard> {
                 decoration: BoxDecoration(
                   color: theme.colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: theme.colorScheme.outlineVariant, width: 2),
+                  border: Border.all(
+                      color: theme.colorScheme.outlineVariant, width: 2),
                 ),
                 child: _selectedImages.isEmpty
                     ? Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.add_a_photo_rounded, size: 36, color: theme.colorScheme.primary),
+                          Icon(Icons.add_a_photo_rounded,
+                              size: 36, color: theme.colorScheme.primary),
                           const SizedBox(height: 8),
-                          Text('Tap to add photos', style: theme.textTheme.bodySmall),
+                          Text('Tap to add photos',
+                              style: theme.textTheme.bodySmall),
                         ],
                       )
                     : Wrap(
@@ -210,15 +317,23 @@ class _ReporterDashboardState extends ConsumerState<ReporterDashboard> {
                                 children: [
                                   ClipRRect(
                                     borderRadius: BorderRadius.circular(8),
-                                    child: Image.memory(e.value, width: 80, height: 80, fit: BoxFit.cover),
+                                    child: Image.memory(e.value,
+                                        width: 80,
+                                        height: 80,
+                                        fit: BoxFit.cover),
                                   ),
                                   Positioned(
-                                    top: 0, right: 0,
+                                    top: 0,
+                                    right: 0,
                                     child: GestureDetector(
-                                      onTap: () => setState(() => _selectedImages.removeAt(e.key)),
+                                      onTap: () => setState(() =>
+                                          _selectedImages.removeAt(e.key)),
                                       child: Container(
-                                        decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                                        child: const Icon(Icons.close, size: 16, color: Colors.white),
+                                        decoration: const BoxDecoration(
+                                            color: Colors.red,
+                                            shape: BoxShape.circle),
+                                        child: const Icon(Icons.close,
+                                            size: 16, color: Colors.white),
                                       ),
                                     ),
                                   ),
@@ -227,12 +342,15 @@ class _ReporterDashboardState extends ConsumerState<ReporterDashboard> {
                           GestureDetector(
                             onTap: _pickImages,
                             child: Container(
-                              width: 80, height: 80,
+                              width: 80,
+                              height: 80,
                               decoration: BoxDecoration(
-                                border: Border.all(color: theme.colorScheme.primary, width: 2),
+                                border: Border.all(
+                                    color: theme.colorScheme.primary, width: 2),
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              child: Icon(Icons.add, color: theme.colorScheme.primary),
+                              child: Icon(Icons.add,
+                                  color: theme.colorScheme.primary),
                             ),
                           ),
                         ],
@@ -242,33 +360,45 @@ class _ReporterDashboardState extends ConsumerState<ReporterDashboard> {
             const SizedBox(height: 20),
 
             // --- Description ---
-            Text('Description *', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
+            Text('Description *',
+                style: theme.textTheme.titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
             TextField(
               controller: _descriptionController,
               maxLines: 4,
-              decoration: const InputDecoration(hintText: 'Describe the issue in detail...', border: OutlineInputBorder()),
+              decoration: const InputDecoration(
+                  hintText: 'Describe the issue in detail...',
+                  border: OutlineInputBorder()),
             ),
             const SizedBox(height: 20),
 
             // --- Issue Type ---
-            Text('Issue Type *', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
+            Text('Issue Type *',
+                style: theme.textTheme.titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
             DropdownButtonFormField<String>(
-              value: _issueType,
+              initialValue: _issueType,
               decoration: const InputDecoration(border: OutlineInputBorder()),
-              items: _issueTypes.entries.map((e) => DropdownMenuItem(value: e.key, child: Text(e.value))).toList(),
+              items: _issueTypes.entries
+                  .map((e) =>
+                      DropdownMenuItem(value: e.key, child: Text(e.value)))
+                  .toList(),
               onChanged: (v) => setState(() => _issueType = v!),
             ),
             const SizedBox(height: 20),
 
             // --- Location ---
-            Text('Location *', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
+            Text('Location *',
+                style: theme.textTheme.titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
             TextField(
               controller: _locationController,
               decoration: const InputDecoration(
-                hintText: 'Enter address or area name',
+                hintText:
+                    'Address or area name fills automatically from coordinates',
                 border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.location_on),
               ),
@@ -279,10 +409,41 @@ class _ReporterDashboardState extends ConsumerState<ReporterDashboard> {
             Row(
               children: [
                 Expanded(
+                  child: TextField(
+                    controller: _latitudeController,
+                    keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true, signed: true),
+                    decoration: const InputDecoration(
+                      labelText: 'Latitude',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: TextField(
+                    controller: _longitudeController,
+                    keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true, signed: true),
+                    decoration: const InputDecoration(
+                      labelText: 'Longitude',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
                   child: OutlinedButton.icon(
                     onPressed: _isGettingLocation ? null : _getLocation,
                     icon: _isGettingLocation
-                        ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2))
                         : const Icon(Icons.my_location, size: 18),
                     label: Text(_latitude != null
                         ? 'Lat: ${_latitude!.toStringAsFixed(4)}, Lng: ${_longitude!.toStringAsFixed(4)}'
@@ -294,24 +455,34 @@ class _ReporterDashboardState extends ConsumerState<ReporterDashboard> {
             if (_latitude != null)
               Padding(
                 padding: const EdgeInsets.only(top: 4),
-                child: Text('✓ GPS coordinates captured', style: theme.textTheme.labelSmall?.copyWith(color: Colors.green)),
+                child: Text(
+                  _isResolvingLocation
+                      ? 'Finding location name...'
+                      : '✓ Coordinates ready',
+                  style:
+                      theme.textTheme.labelSmall?.copyWith(color: Colors.green),
+                ),
               ),
             const SizedBox(height: 20),
 
             // --- Urgency ---
-            Text('Urgency (optional)', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
+            Text('Urgency (optional)',
+                style: theme.textTheme.titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
             Row(
               children: _urgencyLevels.entries.map((e) {
                 final isSelected = e.key == _urgency;
-                final color = e.key == 'critical' ? Colors.red : (e.key == 'urgent' ? Colors.orange : Colors.green);
+                final color = e.key == 'critical'
+                    ? Colors.red
+                    : (e.key == 'urgent' ? Colors.orange : Colors.green);
                 return Expanded(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4),
                     child: ChoiceChip(
                       label: Text(e.value),
                       selected: isSelected,
-                      selectedColor: color.withOpacity(0.2),
+                      selectedColor: color.withValues(alpha: 0.2),
                       onSelected: (_) => setState(() => _urgency = e.key),
                     ),
                   ),
@@ -321,7 +492,9 @@ class _ReporterDashboardState extends ConsumerState<ReporterDashboard> {
             const SizedBox(height: 20),
 
             // --- Required Volunteers ---
-            Text('Required Volunteers', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
+            Text('Required Volunteers',
+                style: theme.textTheme.titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
             TextField(
               controller: _volunteerCountController,
@@ -340,7 +513,12 @@ class _ReporterDashboardState extends ConsumerState<ReporterDashboard> {
               height: 52,
               child: FilledButton.icon(
                 onPressed: _isSubmitting ? null : _submitReport,
-                icon: _isSubmitting ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.send),
+                icon: _isSubmitting
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Icon(Icons.send),
                 label: Text(_isSubmitting ? 'Submitting...' : 'Submit Report'),
               ),
             ),

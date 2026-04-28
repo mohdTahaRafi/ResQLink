@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import '../../data/local/hive_store.dart';
 import '../../core/router.dart';
 import '../../main.dart';
@@ -40,7 +39,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       final api = ref.read(apiClientProvider);
       final result = await api.createVolunteer(
         name: user?.displayName ?? user?.email?.split('@').first ?? 'Volunteer',
-        skills: role == 'specialist' ? ['specialist', 'legal', 'medical'] : ['general'],
+        skills: role == 'specialist'
+            ? ['specialist', 'legal', 'medical']
+            : ['general'],
         latitude: 26.8467,
         longitude: 80.9462,
       );
@@ -115,7 +116,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       debugPrint('Google sign-in error: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Google sign-in failed. Please try again.')),
+          const SnackBar(
+              content: Text('Google sign-in failed. Please try again.')),
         );
       }
     } finally {
@@ -129,11 +131,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final isDark = theme.brightness == Brightness.dark;
     final role = HiveStore.getUserRole() ?? '';
     final roleLabel = {
-      'reporter': 'General User',
-      'volunteer': 'Volunteer',
-      'specialist': 'Lawyer / Doctor',
-      'ngo_admin': 'NGO Organization',
-    }[role] ?? 'User';
+          'reporter': 'General User',
+          'volunteer': 'Volunteer',
+          'specialist': 'Lawyer / Doctor',
+          'ngo_admin': 'NGO Organization',
+        }[role] ??
+        'User';
 
     return Scaffold(
       body: SafeArea(
@@ -154,7 +157,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: const Icon(Icons.people_alt_rounded, size: 48, color: Colors.white),
+                    child: const Icon(Icons.people_alt_rounded,
+                        size: 48, color: Colors.white),
                   ),
                   const SizedBox(height: 20),
                   Text(
@@ -176,9 +180,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   // Role badge
                   if (role.isNotEmpty)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 6),
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.primaryContainer.withOpacity(isDark ? 0.3 : 0.6),
+                        color: theme.colorScheme.primaryContainer
+                            .withValues(alpha: isDark ? 0.3 : 0.6),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
@@ -198,21 +204,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     child: OutlinedButton.icon(
                       onPressed: _isGoogleLoading ? null : _signInWithGoogle,
                       style: OutlinedButton.styleFrom(
-                        side: BorderSide(color: theme.colorScheme.outlineVariant),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        side:
+                            BorderSide(color: theme.colorScheme.outlineVariant),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
                       ),
                       icon: _isGoogleLoading
                           ? const SizedBox(
-                              width: 20, height: 20,
+                              width: 20,
+                              height: 20,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
                           : Image.network(
                               'https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg',
-                              width: 22, height: 22,
-                              errorBuilder: (_, __, ___) => const Icon(Icons.g_mobiledata, size: 24),
+                              width: 22,
+                              height: 22,
+                              errorBuilder: (_, __, ___) =>
+                                  const Icon(Icons.g_mobiledata, size: 24),
                             ),
                       label: Text(
-                        _isGoogleLoading ? 'Signing in...' : 'Continue with Google',
+                        _isGoogleLoading
+                            ? 'Signing in...'
+                            : 'Continue with Google',
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
@@ -227,14 +240,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   // ── Divider ──
                   Row(
                     children: [
-                      Expanded(child: Divider(color: theme.colorScheme.outlineVariant)),
+                      Expanded(
+                          child:
+                              Divider(color: theme.colorScheme.outlineVariant)),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Text('or', style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        )),
+                        child: Text('or',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            )),
                       ),
-                      Expanded(child: Divider(color: theme.colorScheme.outlineVariant)),
+                      Expanded(
+                          child:
+                              Divider(color: theme.colorScheme.outlineVariant)),
                     ],
                   ),
 
@@ -248,8 +266,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       labelText: 'Email',
                       prefixIcon: Icon(Icons.email_outlined),
                     ),
-                    validator: (v) =>
-                        v != null && v.contains('@') ? null : 'Enter a valid email',
+                    validator: (v) => v != null && v.contains('@')
+                        ? null
+                        : 'Enter a valid email',
                   ),
                   const SizedBox(height: 16),
 
@@ -261,8 +280,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       labelText: 'Password',
                       prefixIcon: Icon(Icons.lock_outlined),
                     ),
-                    validator: (v) =>
-                        v != null && v.length >= 6 ? null : 'Minimum 6 characters',
+                    validator: (v) => v != null && v.length >= 6
+                        ? null
+                        : 'Minimum 6 characters',
                   ),
                   const SizedBox(height: 28),
 
@@ -274,11 +294,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       onPressed: _isLoading ? null : _submitEmailPassword,
                       child: _isLoading
                           ? const SizedBox(
-                              height: 20, width: 20,
+                              height: 20,
+                              width: 20,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
                           : Text(_isSignUp ? 'Create Account' : 'Sign In',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                              style: const TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.w600)),
                     ),
                   ),
                   const SizedBox(height: 14),

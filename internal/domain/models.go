@@ -16,6 +16,7 @@ type Report struct {
 	Latitude              float64   `json:"latitude" firestore:"latitude"`
 	Longitude             float64   `json:"longitude" firestore:"longitude"`
 	ProblemCategory       string    `json:"problem_category" firestore:"problem_category"`
+	WardID                string    `json:"ward_id,omitempty" firestore:"ward_id,omitempty"`
 	SeverityIndex         float64   `json:"severity_index" firestore:"severity_index"`
 	AffectedPopulationEst int       `json:"affected_population_estimate" firestore:"affected_population_estimate"`
 	Summary               string    `json:"summary" firestore:"summary"`
@@ -33,7 +34,7 @@ type Volunteer struct {
 	ID             string   `json:"id" firestore:"id"`
 	UID            string   `json:"uid" firestore:"uid"`
 	Name           string   `json:"name" firestore:"name"`
-	Role           string   `json:"role" firestore:"role"` // "volunteer" or "specialist"
+	Role           string   `json:"role" firestore:"role"`                                         // "volunteer" or "specialist"
 	Specialization string   `json:"specialization,omitempty" firestore:"specialization,omitempty"` // "lawyer", "doctor"
 	Skills         []string `json:"skills" firestore:"skills"`
 	Latitude       float64  `json:"latitude" firestore:"latitude"`
@@ -56,21 +57,21 @@ type User struct {
 
 // CaseFile represents a bundle of documents assigned to a specialist for a set of reports.
 type CaseFile struct {
-	ID                   string         `json:"id" firestore:"id"`
-	AssignedSpecialistUID string        `json:"assigned_specialist_uid" firestore:"assigned_specialist_uid"`
-	ReportIDs            []string       `json:"report_ids" firestore:"report_ids"`
-	Title                string         `json:"title" firestore:"title"`
-	Status               string         `json:"status" firestore:"status"` // "open", "in_review", "closed"
-	Documents            []CaseDocument `json:"documents" firestore:"documents"`
-	CreatedAt            time.Time      `json:"created_at" firestore:"created_at"`
-	UpdatedAt            time.Time      `json:"updated_at" firestore:"updated_at"`
+	ID                    string         `json:"id" firestore:"id"`
+	AssignedSpecialistUID string         `json:"assigned_specialist_uid" firestore:"assigned_specialist_uid"`
+	ReportIDs             []string       `json:"report_ids" firestore:"report_ids"`
+	Title                 string         `json:"title" firestore:"title"`
+	Status                string         `json:"status" firestore:"status"` // "open", "in_review", "closed"
+	Documents             []CaseDocument `json:"documents" firestore:"documents"`
+	CreatedAt             time.Time      `json:"created_at" firestore:"created_at"`
+	UpdatedAt             time.Time      `json:"updated_at" firestore:"updated_at"`
 }
 
 // CaseDocument represents a document uploaded to a case file.
 type CaseDocument struct {
 	ID         string    `json:"id" firestore:"id"`
 	FileName   string    `json:"file_name" firestore:"file_name"`
-	Content    string    `json:"content" firestore:"content"` // base64 or extracted text
+	Content    string    `json:"content" firestore:"content"`     // base64 or extracted text
 	FileType   string    `json:"file_type" firestore:"file_type"` // "pdf", "image", "text"
 	UploadedAt time.Time `json:"uploaded_at" firestore:"uploaded_at"`
 }
@@ -136,22 +137,22 @@ type IngestionEvent struct {
 
 // ImageAnalysis is the structured output from Gemini image analysis.
 type ImageAnalysis struct {
-	IssueType                 string   `json:"issue_type"`
-	Description               string   `json:"description"`
-	Severity                  int      `json:"severity"`
-	DetectedObjects           []string `json:"detected_objects"`
-	SuggestedCategory         string   `json:"suggested_category"`
-	LocationHints             string   `json:"location_hints"`
-	RequiresImmediateAttention bool    `json:"requires_immediate_attention"`
+	IssueType                  string   `json:"issue_type"`
+	Description                string   `json:"description"`
+	Severity                   int      `json:"severity"`
+	DetectedObjects            []string `json:"detected_objects"`
+	SuggestedCategory          string   `json:"suggested_category"`
+	LocationHints              string   `json:"location_hints"`
+	RequiresImmediateAttention bool     `json:"requires_immediate_attention"`
 }
 
 // ReportVerification is the result of cross-checking image vs text.
 type ReportVerification struct {
-	IsConsistent       bool     `json:"is_consistent"`
-	Confidence         float64  `json:"confidence"`
-	Discrepancies      []string `json:"discrepancies"`
-	VerificationSummary string  `json:"verification_summary"`
-	RiskScore          int      `json:"risk_score"`
+	IsConsistent        bool     `json:"is_consistent"`
+	Confidence          float64  `json:"confidence"`
+	Discrepancies       []string `json:"discrepancies"`
+	VerificationSummary string   `json:"verification_summary"`
+	RiskScore           int      `json:"risk_score"`
 }
 
 // SimilarReport is a single match in duplicate detection.
@@ -241,7 +242,7 @@ type RecommendedSkill struct {
 // SkillRecommendation is AI-suggested skill development for a volunteer.
 type SkillRecommendation struct {
 	RecommendedSkills   []RecommendedSkill `json:"recommended_skills"`
-	TrainingSuggestions  []string           `json:"training_suggestions"`
+	TrainingSuggestions []string           `json:"training_suggestions"`
 	CareerPath          string             `json:"career_path"`
 	Strengths           []string           `json:"strengths"`
 }

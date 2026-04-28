@@ -12,7 +12,6 @@ class CommandDashboard extends StatefulWidget {
 }
 
 class _CommandDashboardState extends State<CommandDashboard> {
-  GoogleMapController? _mapController;
   final Set<Circle> _heatmapCircles = {};
   bool _isLoading = true;
 
@@ -23,8 +22,18 @@ class _CommandDashboardState extends State<CommandDashboard> {
   final _mockHeatData = [
     {'lat': 26.8600, 'lng': 80.9400, 'intensity': 8.5, 'category': 'water'},
     {'lat': 26.8470, 'lng': 80.9550, 'intensity': 6.2, 'category': 'road'},
-    {'lat': 26.8350, 'lng': 80.9300, 'intensity': 9.1, 'category': 'sanitation'},
-    {'lat': 26.8550, 'lng': 80.9700, 'intensity': 4.0, 'category': 'electricity'},
+    {
+      'lat': 26.8350,
+      'lng': 80.9300,
+      'intensity': 9.1,
+      'category': 'sanitation'
+    },
+    {
+      'lat': 26.8550,
+      'lng': 80.9700,
+      'intensity': 4.0,
+      'category': 'electricity'
+    },
     {'lat': 26.8700, 'lng': 80.9200, 'intensity': 7.3, 'category': 'health'},
   ];
 
@@ -46,7 +55,8 @@ class _CommandDashboardState extends State<CommandDashboard> {
         circleId: CircleId('heat_$i'),
         center: LatLng(point['lat'] as double, point['lng'] as double),
         radius: intensity * 150,
-        fillColor: _categoryColor(point['category'] as String).withOpacity(0.3),
+        fillColor:
+            _categoryColor(point['category'] as String).withValues(alpha: 0.3),
         strokeColor: _categoryColor(point['category'] as String),
         strokeWidth: 2,
       ));
@@ -60,12 +70,18 @@ class _CommandDashboardState extends State<CommandDashboard> {
 
   Color _categoryColor(String category) {
     switch (category) {
-      case 'water': return Colors.blue;
-      case 'road': return Colors.orange;
-      case 'sanitation': return Colors.red;
-      case 'electricity': return Colors.amber;
-      case 'health': return Colors.green;
-      default: return Colors.purple;
+      case 'water':
+        return Colors.blue;
+      case 'road':
+        return Colors.orange;
+      case 'sanitation':
+        return Colors.red;
+      case 'electricity':
+        return Colors.amber;
+      case 'health':
+        return Colors.green;
+      default:
+        return Colors.purple;
     }
   }
 
@@ -88,7 +104,8 @@ class _CommandDashboardState extends State<CommandDashboard> {
             icon: const Icon(Icons.logout),
             onPressed: () async {
               await FirebaseAuth.instance.signOut();
-              if (mounted) context.go('/login');
+              if (!context.mounted) return;
+              context.go('/login');
             },
           ),
         ],
@@ -121,7 +138,6 @@ class _CommandDashboardState extends State<CommandDashboard> {
                       zoom: 13,
                     ),
                     circles: _heatmapCircles,
-                    onMapCreated: (controller) => _mapController = controller,
                     myLocationEnabled: true,
                     myLocationButtonEnabled: true,
                     mapToolbarEnabled: false,
@@ -134,14 +150,27 @@ class _CommandDashboardState extends State<CommandDashboard> {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: theme.colorScheme.surface,
-              boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 8, offset: const Offset(0, -2))],
+              boxShadow: [
+                BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 8,
+                    offset: const Offset(0, -2))
+              ],
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _QuickStat(label: 'Active', value: '${_mockHeatData.length}', icon: Icons.warning_amber),
-                _QuickStat(label: 'Critical', value: '${_mockHeatData.where((d) => (d['intensity'] as double) > 7).length}', icon: Icons.error),
-                _QuickStat(label: 'Wards', value: '5', icon: Icons.location_city),
+                _QuickStat(
+                    label: 'Active',
+                    value: '${_mockHeatData.length}',
+                    icon: Icons.warning_amber),
+                _QuickStat(
+                    label: 'Critical',
+                    value:
+                        '${_mockHeatData.where((d) => (d['intensity'] as double) > 7).length}',
+                    icon: Icons.error),
+                _QuickStat(
+                    label: 'Wards', value: '5', icon: Icons.location_city),
               ],
             ),
           ),
@@ -162,7 +191,10 @@ class _LegendDot extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+        Container(
+            width: 10,
+            height: 10,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
         const SizedBox(width: 4),
         Text(label, style: Theme.of(context).textTheme.labelSmall),
       ],
@@ -175,7 +207,8 @@ class _QuickStat extends StatelessWidget {
   final String value;
   final IconData icon;
 
-  const _QuickStat({required this.label, required this.value, required this.icon});
+  const _QuickStat(
+      {required this.label, required this.value, required this.icon});
 
   @override
   Widget build(BuildContext context) {
@@ -184,7 +217,11 @@ class _QuickStat extends StatelessWidget {
       children: [
         Icon(icon, size: 22, color: Theme.of(context).colorScheme.primary),
         const SizedBox(height: 4),
-        Text(value, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+        Text(value,
+            style: Theme.of(context)
+                .textTheme
+                .titleMedium
+                ?.copyWith(fontWeight: FontWeight.bold)),
         Text(label, style: Theme.of(context).textTheme.labelSmall),
       ],
     );

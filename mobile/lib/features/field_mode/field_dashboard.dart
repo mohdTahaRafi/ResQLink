@@ -63,7 +63,9 @@ class _FieldDashboardState extends ConsumerState<FieldDashboard> {
   }
 
   Future<void> _submitReport() async {
-    if (_descriptionController.text.isEmpty && _selectedMediaPath == null) return;
+    if (_descriptionController.text.isEmpty && _selectedMediaPath == null) {
+      return;
+    }
 
     setState(() => _isSubmitting = true);
 
@@ -72,7 +74,8 @@ class _FieldDashboardState extends ConsumerState<FieldDashboard> {
     if (_selectedMediaFile != null) {
       try {
         final bytes = await _selectedMediaFile!.readAsBytes();
-        mediaBase64 = 'data:image/${_selectedMediaFile!.name.split('.').last};base64,${base64Encode(bytes)}';
+        mediaBase64 =
+            'data:image/${_selectedMediaFile!.name.split('.').last};base64,${base64Encode(bytes)}';
       } catch (e) {
         debugPrint('Image encode error: $e');
       }
@@ -169,7 +172,8 @@ class _FieldDashboardState extends ConsumerState<FieldDashboard> {
             icon: const Icon(Icons.logout),
             onPressed: () async {
               await FirebaseAuth.instance.signOut();
-              if (mounted) context.go('/login');
+              if (!context.mounted) return;
+              context.go('/login');
             },
           ),
         ],
@@ -184,8 +188,8 @@ class _FieldDashboardState extends ConsumerState<FieldDashboard> {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
                 color: _connectivityService.isOnline
-                    ? Colors.green.withOpacity(0.1)
-                    : Colors.orange.withOpacity(0.1),
+                    ? Colors.green.withValues(alpha: 0.1)
+                    : Colors.orange.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
@@ -194,7 +198,9 @@ class _FieldDashboardState extends ConsumerState<FieldDashboard> {
                   Icon(
                     _connectivityService.isOnline ? Icons.wifi : Icons.wifi_off,
                     size: 16,
-                    color: _connectivityService.isOnline ? Colors.green : Colors.orange,
+                    color: _connectivityService.isOnline
+                        ? Colors.green
+                        : Colors.orange,
                   ),
                   const SizedBox(width: 8),
                   Text(
@@ -269,7 +275,8 @@ class _FieldDashboardState extends ConsumerState<FieldDashboard> {
                 onPressed: _isSubmitting ? null : _submitReport,
                 icon: _isSubmitting
                     ? const SizedBox(
-                        height: 18, width: 18,
+                        height: 18,
+                        width: 18,
                         child: CircularProgressIndicator(strokeWidth: 2))
                     : const Icon(Icons.send_rounded),
                 label: Text(_isSubmitting ? 'Submitting...' : 'Submit Report'),

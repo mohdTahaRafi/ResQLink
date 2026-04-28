@@ -73,7 +73,8 @@ class _TransparencyDashboardState extends State<TransparencyDashboard> {
             icon: const Icon(Icons.logout),
             onPressed: () async {
               await FirebaseAuth.instance.signOut();
-              if (mounted) context.go('/login');
+              if (!context.mounted) return;
+              context.go('/login');
             },
           ),
         ],
@@ -85,8 +86,9 @@ class _TransparencyDashboardState extends State<TransparencyDashboard> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Impact Overview', style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w600)),
+                  Text('Impact Overview',
+                      style: theme.textTheme.titleLarge
+                          ?.copyWith(fontWeight: FontWeight.w600)),
                   const SizedBox(height: 16),
 
                   // Stats grid
@@ -128,13 +130,17 @@ class _TransparencyDashboardState extends State<TransparencyDashboard> {
                   const SizedBox(height: 32),
                   Row(
                     children: [
-                      Text('Impact Stories', style: theme.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w600)),
+                      Text('Impact Stories',
+                          style: theme.textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.w600)),
                       const SizedBox(width: 8),
                       Chip(
-                        label: Text('AI Generated', style: TextStyle(
-                          fontSize: 10, color: theme.colorScheme.primary)),
-                        backgroundColor: theme.colorScheme.primaryContainer.withOpacity(0.5),
+                        label: Text('AI Generated',
+                            style: TextStyle(
+                                fontSize: 10,
+                                color: theme.colorScheme.primary)),
+                        backgroundColor: theme.colorScheme.primaryContainer
+                            .withValues(alpha: 0.5),
                         side: BorderSide.none,
                         padding: EdgeInsets.zero,
                       ),
@@ -158,13 +164,14 @@ class _TransparencyDashboardState extends State<TransparencyDashboard> {
                                 const Spacer(),
                                 Text(story.resolvedDate,
                                     style: theme.textTheme.labelSmall?.copyWith(
-                                      color: theme.colorScheme.onSurfaceVariant)),
+                                        color: theme
+                                            .colorScheme.onSurfaceVariant)),
                               ],
                             ),
                             const SizedBox(height: 12),
                             Text(story.title,
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w600)),
+                                style: theme.textTheme.titleMedium
+                                    ?.copyWith(fontWeight: FontWeight.w600)),
                             const SizedBox(height: 8),
                             Text(story.narrative,
                                 style: theme.textTheme.bodyMedium?.copyWith(
@@ -174,10 +181,12 @@ class _TransparencyDashboardState extends State<TransparencyDashboard> {
                             const SizedBox(height: 12),
                             Row(
                               children: [
-                                Icon(Icons.people, size: 16, color: theme.colorScheme.primary),
+                                Icon(Icons.people,
+                                    size: 16, color: theme.colorScheme.primary),
                                 const SizedBox(width: 4),
                                 Text('${story.impactCount} people impacted',
-                                    style: theme.textTheme.labelMedium?.copyWith(
+                                    style:
+                                        theme.textTheme.labelMedium?.copyWith(
                                       color: theme.colorScheme.primary,
                                       fontWeight: FontWeight.w600,
                                     )),
@@ -235,10 +244,14 @@ class _ImpactCard extends StatelessWidget {
           children: [
             Icon(icon, color: color, size: 24),
             const SizedBox(height: 8),
-            Text(value, style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold)),
-            Text(label, style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant)),
+            Text(value,
+                style: Theme.of(context)
+                    .textTheme
+                    .headlineSmall
+                    ?.copyWith(fontWeight: FontWeight.bold)),
+            Text(label,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant)),
           ],
         ),
       ),
