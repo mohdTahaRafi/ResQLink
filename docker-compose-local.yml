@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  # Just the API - connect to real GCP if needed, or use mock
+  api:
+    image: golang:1.22-alpine
+    working_dir: /app
+    volumes:
+      - .:/app
+      - /root/go:/root/go
+    ports:
+      - "8080:8080"
+    environment:
+      - GCP_PROJECT_ID=resqlink-local
+      - GCP_LOCATION=asia-south1
+      - PORT=8080
+      - FIRESTORE_EMULATOR_HOST=localhost:8080
+      - PUBSUB_EMULATOR_HOST=localhost:8085
+    command: /bin/sh -c "go run ./cmd/api"
+    networks:
+      - resqlink-network
+    profiles:
+      - dev
+
+networks:
+  resqlink-network:
+    driver: bridge

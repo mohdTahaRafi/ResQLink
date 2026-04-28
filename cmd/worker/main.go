@@ -16,6 +16,7 @@ import (
 	"github.com/resqlink-project/resqlink/internal/domain"
 	"github.com/resqlink-project/resqlink/internal/repository"
 	"github.com/resqlink-project/resqlink/internal/service"
+	"google.golang.org/api/option"
 )
 
 func main() {
@@ -36,15 +37,21 @@ func main() {
 		subscriptionID = "report-ingestion-sub"
 	}
 
+	credPath := os.Getenv("FIREBASE_CREDENTIALS_PATH")
+	var clientOpts []option.ClientOption
+	if credPath != "" {
+		clientOpts = append(clientOpts, option.WithCredentialsFile(credPath))
+	}
+
 	// Firestore
-	fsClient, err := firestore.NewClient(ctx, projectID)
+	fsClient, err := firestore.NewClient(ctx, projectID, clientOpts...)
 	if err != nil {
 		log.Fatalf("firestore init: %v", err)
 	}
 	defer fsClient.Close()
 
 	// Pub/Sub
-	psClient, err := pubsub.NewClient(ctx, projectID)
+	psClient, err := pubsub.NewClient(ctx, projectID, clientOpts...)
 	if err != nil {
 		log.Fatalf("pubsub init: %v", err)
 	}

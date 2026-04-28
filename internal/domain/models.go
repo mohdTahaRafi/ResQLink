@@ -2,6 +2,17 @@ package domain
 
 import "time"
 
+type ReportStatus string
+
+const (
+	StatusPending    ReportStatus = "pending"
+	StatusProcessing ReportStatus = "processing"
+	StatusAccepted   ReportStatus = "accepted"
+	StatusInProgress ReportStatus = "in_progress"
+	StatusEscalated  ReportStatus = "escalated"
+	StatusResolved   ReportStatus = "resolved"
+)
+
 // Report represents an issue submitted by a General User (Reporter).
 type Report struct {
 	ID                    string    `json:"id" firestore:"id"`
@@ -16,12 +27,14 @@ type Report struct {
 	Latitude              float64   `json:"latitude" firestore:"latitude"`
 	Longitude             float64   `json:"longitude" firestore:"longitude"`
 	ProblemCategory       string    `json:"problem_category" firestore:"problem_category"`
+	WardID                string    `json:"ward_id" firestore:"ward_id"`
 	SeverityIndex         float64   `json:"severity_index" firestore:"severity_index"`
 	AffectedPopulationEst int       `json:"affected_population_estimate" firestore:"affected_population_estimate"`
 	Summary               string    `json:"summary" firestore:"summary"`
 	UrgencyScore          float64   `json:"urgency_score" firestore:"urgency_score"`
-	Status                string    `json:"status" firestore:"status"` // "pending", "accepted", "in_progress", "escalated", "resolved"
-	AssignedVolunteerIDs  []string  `json:"assigned_volunteer_ids,omitempty" firestore:"assigned_volunteer_ids,omitempty"`
+	Status                ReportStatus `json:"status" firestore:"status"`
+	AssignedVolunteerIDs  []string     `json:"assigned_volunteer_ids,omitempty" firestore:"assigned_volunteer_ids,omitempty"`
+	AssignedVolunteers    []string     `json:"assigned_volunteers,omitempty" firestore:"assigned_volunteers,omitempty"`
 	AssignedSpecialistUID string    `json:"assigned_specialist_uid,omitempty" firestore:"assigned_specialist_uid,omitempty"`
 	CreatedAt             time.Time `json:"created_at" firestore:"created_at"`
 	UpdatedAt             time.Time `json:"updated_at" firestore:"updated_at"`
@@ -39,10 +52,12 @@ type Volunteer struct {
 	Latitude       float64  `json:"latitude" firestore:"latitude"`
 	Longitude      float64  `json:"longitude" firestore:"longitude"`
 	Available      bool     `json:"available" firestore:"available"`
+	IsAvailable    bool     `json:"is_available" firestore:"is_available"`
 	CompletedTasks int      `json:"completed_tasks" firestore:"completed_tasks"`
 	AssignedTasks  int      `json:"assigned_tasks" firestore:"assigned_tasks"`
 	CompletionRate float64  `json:"completion_rate" firestore:"completion_rate"`
 	S2CellID       int64    `json:"s2_cell_id" firestore:"s2_cell_id"`
+	CreatedAt      time.Time `json:"created_at" firestore:"created_at"`
 }
 
 // User represents a platform user with a role.
@@ -59,6 +74,7 @@ type CaseFile struct {
 	ID                   string         `json:"id" firestore:"id"`
 	AssignedSpecialistUID string        `json:"assigned_specialist_uid" firestore:"assigned_specialist_uid"`
 	ReportIDs            []string       `json:"report_ids" firestore:"report_ids"`
+	LinkedReportIDs      []string       `json:"linked_report_ids" firestore:"linked_report_ids"`
 	Title                string         `json:"title" firestore:"title"`
 	Status               string         `json:"status" firestore:"status"` // "open", "in_review", "closed"
 	Documents            []CaseDocument `json:"documents" firestore:"documents"`
@@ -70,14 +86,18 @@ type CaseFile struct {
 type CaseDocument struct {
 	ID         string    `json:"id" firestore:"id"`
 	FileName   string    `json:"file_name" firestore:"file_name"`
+	Filename   string    `json:"filename" firestore:"filename"`
 	Content    string    `json:"content" firestore:"content"` // base64 or extracted text
 	FileType   string    `json:"file_type" firestore:"file_type"` // "pdf", "image", "text"
+	MediaURL   string    `json:"media_url" firestore:"media_url"`
+	MimeType   string    `json:"mime_type" firestore:"mime_type"`
 	UploadedAt time.Time `json:"uploaded_at" firestore:"uploaded_at"`
 }
 
 // Ward represents a municipal ward with population data.
 type Ward struct {
 	ID                string  `json:"id" firestore:"id"`
+	WardID            string  `json:"ward_id" firestore:"ward_id"`
 	Name              string  `json:"name" firestore:"name"`
 	PopulationDensity float64 `json:"population_density" firestore:"population_density"`
 	CenterLat         float64 `json:"center_lat" firestore:"center_lat"`
@@ -143,6 +163,9 @@ type ImageAnalysis struct {
 	SuggestedCategory         string   `json:"suggested_category"`
 	LocationHints             string   `json:"location_hints"`
 	RequiresImmediateAttention bool    `json:"requires_immediate_attention"`
+	DetectedIssueType         string   `json:"detected_issue_type"`
+	SeverityHint              string   `json:"severity_hint"`
+	Tags                      []string `json:"tags"`
 }
 
 // ReportVerification is the result of cross-checking image vs text.

@@ -21,6 +21,7 @@ import (
 	"cloud.google.com/go/firestore"
 	"cloud.google.com/go/pubsub"
 	firebase "firebase.google.com/go/v4"
+	"google.golang.org/api/option"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/resqlink-project/resqlink/internal/ai"
@@ -78,25 +79,43 @@ func main() {
 		log.Fatal("GCP_PROJECT_ID environment variable is required")
 	}
 
+	// Validate Firebase credentials path
+	credPath := os.Getenv("FIREBASE_CREDENTIALS_PATH")
+	if credPath != "" {
+		if _, err := os.Stat(credPath); err != nil {
+			log.Fatalf("FIREBASE_CREDENTIALS_PATH (%s) is invalid: %v", credPath, err)
+		}
+	}
+
 	fbApp, err := firebase.NewApp(ctx, &firebase.Config{ProjectID: projectID})
 	if err != nil {
 		log.Fatalf("firebase init: %v", err)
 	}
 
-	fsClient, err := firestore.NewClient(ctx, projectID)
-	if err != nil {
-		log.Fatalf("firestore init: %v", err)
+	var clientOpts []option.ClientOption
+	if credPath != "" {
+		clientOpts = append(clientOpts, option.WithCredentialsFile(credPath))
 	}
-	defer fsClient.Close()
 
-	psClient, err := pubsub.NewClient(ctx, projectID)
+	fsClient, err := firestore.NewClient(ctx, projectID, clientOpts...)
 	if err != nil {
-		log.Fatalf("pubsub init: %v", err)
+		log.Printf("WARNING: firestore init failed, using in-memory fallback: %v", err)
+	} else {
+		defer fsClient.Close()
 	}
-	defer psClient.Close()
+
+	psClient, err := pubsub.NewClient(ctx, projectID, clientOpts...)
+	if err != nil {
+		log.Printf("WARNING: pubsub init failed, report ingestion disabled: %v", err)
+	} else {
+		defer psClient.Close()
+	}
 
 	repo := repository.NewFirestoreRepo(fsClient)
-	topic := psClient.Topic("report-ingestion")
+	var topic *pubsub.Topic
+	if psClient != nil {
+		topic = psClient.Topic("report-ingestion")
+	}
 	authMW := middleware.FirebaseAuth(fbApp)
 
 	// Initialize Gemini AI client
@@ -113,6 +132,8 @@ func main() {
 	}
 
 	r := gin.Default()
+	r.Use(middleware.RequestLogger())
+	r.Use(middleware.ErrorHandler())
 	r.Use(cors.New(cors.Config{
 		AllowAllOrigins:  true,
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
@@ -133,35 +154,42 @@ func main() {
 	// ══════════════════════════════════════════════════
 	// REPORTER — Submit Reports
 	// ══════════════════════════════════════════════════
-	api.POST("/reports", handleCreateReport(repo, topic))
+	reporterGroup := api.Group("/reports")
+	reporterGroup.Use(middleware.RequireRole("reporter", "admin"))
+	reporterGroup.POST("", middleware.ValidateReportInput(), handleCreateReport(repo, topic))
 	api.GET("/reports", handleListReports(repo))
 	// IMPORTANT: static paths must be registered before parameterized ones
 	api.GET("/reports/prioritized", handlePrioritizedReports(repo))
 	api.GET("/reports/:id", handleGetReport(repo))
-	api.GET("/reports/:id/match", handleMatchForReport(repo))
-	api.PATCH("/reports/:id/status", handleUpdateReportStatus(repo))
-	api.POST("/reports/:id/assign", handleAssignVolunteers(repo))
+	reporterGroup.GET("/:id/match", handleMatchForReport(repo))
+	reporterGroup.PATCH("/:id/status", handleUpdateReportStatus(repo))
+	reporterGroup.POST("/:id/assign", handleAssignVolunteers(repo))
 
 	// ══════════════════════════════════════════════════
 	// VOLUNTEER — Task Management
 	// ══════════════════════════════════════════════════
-	api.GET("/volunteers/me/tasks", handleVolunteerTasks(repo))
-	api.POST("/volunteers", handleCreateVolunteer(repo))
+	volunteerGroup := api.Group("/volunteers")
+	volunteerGroup.Use(middleware.RequireRole("volunteer", "admin"))
+	volunteerGroup.GET("/me/tasks", handleVolunteerTasks(repo))
+	volunteerGroup.POST("", middleware.ValidateVolunteerInput(), handleCreateVolunteer(repo))
 
 	// ══════════════════════════════════════════════════
 	// SPECIALIST — Case Files & AI Search
 	// ══════════════════════════════════════════════════
-	api.GET("/cases/my", handleMyCases(repo))
-	api.POST("/cases", handleCreateCase(repo))
-	api.POST("/cases/:id/documents", handleAddDocument(repo))
-	api.POST("/cases/:id/ask", handleAskCase(repo))
-	api.POST("/cases/:id/search", handleSearchCase(repo))
+	specialistGroup := api.Group("/cases")
+	specialistGroup.Use(middleware.RequireRole("specialist", "admin"))
+	specialistGroup.GET("/my", handleMyCases(repo))
+	specialistGroup.POST("", middleware.ValidateCaseInput(), handleCreateCase(repo))
+	specialistGroup.POST("/:id/documents", handleAddDocument(repo))
+	specialistGroup.POST("/:id/ask", handleAskCase(repo))
+	specialistGroup.POST("/:id/search", handleSearchCase(repo))
 
 	// ══════════════════════════════════════════════════
 	// AI-POWERED FEATURES
 	// ══════════════════════════════════════════════════
 	if geminiClient != nil {
 		aiGroup := api.Group("/ai")
+		// AI features accessible to all authenticated users
 		aiGroup.POST("/analyze-image", handleAnalyzeImage(geminiClient))
 		aiGroup.POST("/verify-report", handleVerifyReport(geminiClient))
 		aiGroup.POST("/detect-duplicates", handleDetectDuplicates(geminiClient, repo))
@@ -260,7 +288,7 @@ func handleCreateReport(repo *repository.FirestoreRepo, topic *pubsub.Topic) gin
 		eventData, err := service.SerializeIngestionEvent(event)
 		if err != nil {
 			log.Printf("serialize event error: %v", err)
-		} else {
+		} else if topic != nil {
 			// Fire-and-forget: don't block the HTTP response
 			result := topic.Publish(c.Request.Context(), &pubsub.Message{Data: eventData})
 			go func() {
@@ -268,6 +296,8 @@ func handleCreateReport(repo *repository.FirestoreRepo, topic *pubsub.Topic) gin
 					log.Printf("pubsub publish error (non-blocking): %v", err)
 				}
 			}()
+		} else {
+			log.Printf("pubsub unavailable, skipped ingestion publish for report %s", id)
 		}
 
 		c.JSON(http.StatusCreated, gin.H{"id": id, "status": "pending"})

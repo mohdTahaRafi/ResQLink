@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  # Go API Server
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    ports:
+      - "8080:8080"
+    environment:
+      - GCP_PROJECT_ID=${GCP_PROJECT_ID:-resqlink-local}
+      - GCP_LOCATION=${GCP_LOCATION:-asia-south1}
+      - PORT=8080
+      - PUBSUB_TOPIC=${PUBSUB_TOPIC:-report-ingestion}
+      - FIREBASE_CREDENTIALS_PATH=${FIREBASE_CREDENTIALS_PATH:-./firebase-adminsdk.json}
+    volumes:
+      - ${FIREBASE_CREDENTIALS_PATH:-.}:/app/firebase-adminsdk.json:ro
+    depends_on:
+      - pubsub-emulator
+    networks:
+      - resqlink-network
+    restart: on-failure
+
+  # Go Worker
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    ports:
+      - "8081:8081"
+    environment:
+      - GCP_PROJECT_ID=${GCP_PROJECT_ID:-resqlink-local}
+      - GCP_LOCATION=${GCP_LOCATION:-asia-south1}
+      - PUBSUB_SUBSCRIPTION=${PUBSUB_SUBSCRIPTION:-report-ingestion-sub}
+      - FIRESTORE_EMULATOR_HOST=${FIRESTORE_EMULATOR_HOST:-firestore-emulator:8080}
+      - PUBSUB_EMULATOR_HOST=${PUBSUB_EMULATOR_HOST:-pubsub-emulator:8085}
+    volumes:
+      - ${FIREBASE_CREDENTIALS_PATH:-.}:/app/firebase-adminsdk.json:ro
+    depends_on:
+      - pubsub-emulator
+      - firestore-emulator
+    networks:
+      - resqlink-network
+    restart: on-failure
+
+  # Firebase Emulator Suite (Firestore + Pub/Sub)
+  firestore-emulator:
+    image: google/cloud-cli:emulators
+    command: gcloud beta emulators firestore start --host-port 0.0.0.0:8080
+    ports:
+      - "8080:8080"
+    environment:
+      - FIRESTORE_PROJECT_ID=${GCP_PROJECT_ID:-resqlink-local}
+    networks:
+      - resqlink-network
+
+  pubsub-emulator:
+    image: google/cloud-cli:emulators
+    command: gcloud beta emulators pubsub start --host-port 0.0.0.0:8085
+    ports:
+      - "8085:8085"
+    environment:
+      - PUBSUB_PROJECT_ID=${GCP_PROJECT_ID:-resqlink-local}
+    networks:
+      - resqlink-network
+
+networks:
+  resqlink-network:
+    driver: bridge
