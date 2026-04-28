@@ -163,6 +163,30 @@ func (r *FirestoreRepo) CreateVolunteer(ctx context.Context, vol *domain.Volunte
 	return ref.ID, nil
 }
 
+// GetVolunteerByUID finds a volunteer by their Firebase UID (for duplicate prevention).
+func (r *FirestoreRepo) GetVolunteerByUID(ctx context.Context, uid string) (*domain.Volunteer, error) {
+	iter := r.client.Collection("volunteers").
+		Where("uid", "==", uid).
+		Limit(1).
+		Documents(ctx)
+	defer iter.Stop()
+
+	doc, err := iter.Next()
+	if err == iterator.Done {
+		return nil, nil // not found
+	}
+	if err != nil {
+		return nil, fmt.Errorf("firestore get volunteer by uid: %w", err)
+	}
+
+	var v domain.Volunteer
+	if err := doc.DataTo(&v); err != nil {
+		return nil, fmt.Errorf("firestore decode volunteer: %w", err)
+	}
+	v.ID = doc.Ref.ID
+	return &v, nil
+}
+
 // GetAllReports retrieves all reports, optionally limited.
 func (r *FirestoreRepo) GetAllReports(ctx context.Context, limit int) ([]*domain.Report, error) {
 	q := r.client.Collection("reports").OrderBy("created_at", firestore.Desc)
@@ -190,3 +214,121 @@ func (r *FirestoreRepo) GetAllReports(ctx context.Context, limit int) ([]*domain
 	}
 	return reports, nil
 }
+
+// CreateCaseFile persists a new case file.
+func (r *FirestoreRepo) CreateCaseFile(ctx context.Context, cf *domain.CaseFile) (string, error) {
+	cf.CreatedAt = time.Now()
+	cf.UpdatedAt = cf.CreatedAt
+	cf.Status = "open"
+
+	ref, _, err := r.client.Collection("case_files").Add(ctx, cf)
+	if err != nil {
+		return "", fmt.Errorf("firestore create case file: %w", err)
+	}
+	cf.ID = ref.ID
+	return ref.ID, nil
+}
+
+// GetCaseFilesBySpecialist retrieves case files assigned to a specialist.
+func (r *FirestoreRepo) GetCaseFilesBySpecialist(ctx context.Context, uid string) ([]*domain.CaseFile, error) {
+	iter := r.client.Collection("case_files").
+		Where("assigned_specialist_uid", "==", uid).
+		OrderBy("created_at", firestore.Desc).
+		Documents(ctx)
+	defer iter.Stop()
+
+	var cases []*domain.CaseFile
+	for {
+		doc, err := iter.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return nil, fmt.Errorf("firestore iterate case files: %w", err)
+		}
+		var cf domain.CaseFile
+		if err := doc.DataTo(&cf); err != nil {
+			return nil, fmt.Errorf("firestore decode case file: %w", err)
+		}
+		cf.ID = doc.Ref.ID
+		cases = append(cases, &cf)
+	}
+	return cases, nil
+}
+
+// GetCaseFile retrieves a single case file by ID.
+func (r *FirestoreRepo) GetCaseFile(ctx context.Context, id string) (*domain.CaseFile, error) {
+	doc, err := r.client.Collection("case_files").Doc(id).Get(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("firestore get case file: %w", err)
+	}
+	var cf domain.CaseFile
+	if err := doc.DataTo(&cf); err != nil {
+		return nil, fmt.Errorf("firestore decode case file: %w", err)
+	}
+	cf.ID = doc.Ref.ID
+	return &cf, nil
+}
+
+// AddDocumentToCaseFile adds a document to an existing case file.
+func (r *FirestoreRepo) AddDocumentToCaseFile(ctx context.Context, caseID string, doc domain.CaseDocument) error {
+	_, err := r.client.Collection("case_files").Doc(caseID).Update(ctx, []firestore.Update{
+		{Path: "documents", Value: firestore.ArrayUnion(doc)},
+		{Path: "updated_at", Value: time.Now()},
+	})
+	return err
+}
+
+// GetReportsByAssignedVolunteer returns reports assigned to a specific volunteer UID.
+func (r *FirestoreRepo) GetReportsByAssignedVolunteer(ctx context.Context, uid string) ([]*domain.Report, error) {
+	iter := r.client.Collection("reports").
+		Where("assigned_volunteer_ids", "array-contains", uid).
+		OrderBy("created_at", firestore.Desc).
+		Documents(ctx)
+	defer iter.Stop()
+
+	var reports []*domain.Report
+	for {
+		doc, err := iter.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return nil, fmt.Errorf("firestore iterate volunteer tasks: %w", err)
+		}
+		var rpt domain.Report
+		if err := doc.DataTo(&rpt); err != nil {
+			return nil, fmt.Errorf("firestore decode volunteer task: %w", err)
+		}
+		rpt.ID = doc.Ref.ID
+		reports = append(reports, &rpt)
+	}
+	return reports, nil
+}
+
+// GetAllVolunteers retrieves all available volunteers.
+func (r *FirestoreRepo) GetAllVolunteers(ctx context.Context) ([]*domain.Volunteer, error) {
+	iter := r.client.Collection("volunteers").
+		Where("available", "==", true).
+		Documents(ctx)
+	defer iter.Stop()
+
+	var volunteers []*domain.Volunteer
+	for {
+		doc, err := iter.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return nil, fmt.Errorf("firestore iterate all volunteers: %w", err)
+		}
+		var v domain.Volunteer
+		if err := doc.DataTo(&v); err != nil {
+			return nil, fmt.Errorf("firestore decode volunteer: %w", err)
+		}
+		v.ID = doc.Ref.ID
+		volunteers = append(volunteers, &v)
+	}
+	return volunteers, nil
+}
+

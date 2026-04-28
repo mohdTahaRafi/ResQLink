@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -10,11 +11,10 @@ import 'data/remote/api_client.dart';
 
 /// Global ApiClient provider — all widgets can read this via `ref.read(apiClientProvider)`.
 final apiClientProvider = Provider<ApiClient>((ref) {
+  // kIsWeb is a reliable runtime check for Flutter web
   // For web (Chrome): use localhost directly
   // For Android emulator: 10.0.2.2 is the alias for host machine's localhost
-  // For physical device: replace with your machine's LAN IP
-  const isWeb = bool.fromEnvironment('dart.library.js_util', defaultValue: false);
-  final baseUrl = isWeb ? 'http://localhost:8080' : 'http://10.0.2.2:8080';
+  final baseUrl = kIsWeb ? 'http://localhost:8080' : 'http://10.0.2.2:8080';
   return ApiClient(baseUrl: baseUrl);
 });
 

@@ -43,14 +43,15 @@ class DefaultFirebaseOptions {
     iosBundleId: 'com.samaj.mobile',
   );
 
-  // TODO: Add Web app in Firebase Console and fill these in
+  // Web app registered in Firebase Console
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyCEGxHt5gmtlCTa1AJo54WILEt7iYlTMTc',
-    appId: '1:668252030235:android:80e828250f300ae564bfbe',
+    apiKey: 'AIzaSyAGGoqlpORmpAA8I5hQs4c5cBFf31Ipv5A',
+    appId: '1:668252030235:web:f65713fc301d062864bfbe',
     messagingSenderId: '668252030235',
     projectId: 'samaj-58742',
     storageBucket: 'samaj-58742.firebasestorage.app',
     authDomain: 'samaj-58742.firebaseapp.com',
+    measurementId: 'G-DWZK4V0PYZ',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(

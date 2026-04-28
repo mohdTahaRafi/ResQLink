@@ -1,0 +1,57 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper: check if user is authenticated
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    // Helper: get user role from custom claims
+    function userRole() {
+      return request.auth.token.role;
+    }
+
+    // Helper: check if user has one of the given roles
+    function hasRole(roles) {
+      return isAuth() && userRole() in roles;
+    }
+
+    // Reports collection
+    match /reports/{reportId} {
+      // NGO workers can create reports
+      allow create: if hasRole(['ngo_worker', 'nagar_nigam']);
+
+      // All authenticated users can read reports
+      allow read: if isAuth();
+
+      // Only server (admin SDK) or nagar_nigam can update
+      allow update: if hasRole(['nagar_nigam']);
+
+      // No client-side deletes
+      allow delete: if false;
+    }
+
+    // Wards collection (read-only reference data)
+    match /wards/{wardId} {
+      allow read: if isAuth();
+      allow write: if false; // admin SDK only
+    }
+
+    // Volunteers collection
+    match /volunteers/{volunteerId} {
+      allow read: if isAuth();
+      allow create: if isAuth() && request.resource.data.uid == request.auth.uid;
+      allow update: if isAuth() && resource.data.uid == request.auth.uid;
+      allow delete: if false;
+    }
+
+    // Users collection
+    match /users/{userId} {
+      allow read: if isAuth() && (request.auth.uid == userId || hasRole(['nagar_nigam']));
+      allow create: if isAuth() && request.auth.uid == userId;
+      allow update: if isAuth() && request.auth.uid == userId;
+      allow delete: if false;
+    }
+  }
+}

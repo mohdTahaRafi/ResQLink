@@ -1,10 +1,11 @@
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../core/connectivity.dart';
-import '../../data/remote/storage_service.dart';
 import '../../main.dart'; // for apiClientProvider
 
 /// NGO Worker "Field Mode" — High-contrast UI for data entry with offline support.
@@ -18,9 +19,9 @@ class FieldDashboard extends ConsumerStatefulWidget {
 class _FieldDashboardState extends ConsumerState<FieldDashboard> {
   final _descriptionController = TextEditingController();
   final _connectivityService = ConnectivityService();
-  final _storageService = StorageService();
   String? _selectedMediaPath;
   XFile? _selectedMediaFile;
+  Uint8List? _selectedImageBytes;
   bool _isSubmitting = false;
   int _pendingSync = 0;
 
@@ -44,12 +45,19 @@ class _FieldDashboardState extends ConsumerState<FieldDashboard> {
 
   Future<void> _pickImage() async {
     final picker = ImagePicker();
-    // Use gallery on web/desktop, camera on mobile
-    final photo = await picker.pickImage(source: ImageSource.gallery, maxWidth: 1280);
+    // Compress image significantly so its base64 fits in Firestore's 1MB limit
+    final photo = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 800,
+      maxHeight: 800,
+      imageQuality: 50,
+    );
     if (photo != null) {
+      final bytes = await photo.readAsBytes();
       setState(() {
         _selectedMediaPath = photo.path;
         _selectedMediaFile = photo;
+        _selectedImageBytes = bytes;
       });
     }
   }
@@ -59,10 +67,21 @@ class _FieldDashboardState extends ConsumerState<FieldDashboard> {
 
     setState(() => _isSubmitting = true);
 
+    // Encode image as base64 if selected
+    String mediaBase64 = '';
+    if (_selectedMediaFile != null) {
+      try {
+        final bytes = await _selectedMediaFile!.readAsBytes();
+        mediaBase64 = 'data:image/${_selectedMediaFile!.name.split('.').last};base64,${base64Encode(bytes)}';
+      } catch (e) {
+        debugPrint('Image encode error: $e');
+      }
+    }
+
     final reportData = {
       'raw_text': _descriptionController.text,
-      'media_type': _selectedMediaPath != null ? 'image' : 'text',
-      'media_path': _selectedMediaPath ?? '',
+      'media_type': _selectedMediaFile != null ? 'image' : 'text',
+      'media_url': mediaBase64,
       'latitude': _defaultLat,
       'longitude': _defaultLng,
       'timestamp': DateTime.now().toIso8601String(),
@@ -71,29 +90,15 @@ class _FieldDashboardState extends ConsumerState<FieldDashboard> {
     if (_connectivityService.isOnline) {
       try {
         final api = ref.read(apiClientProvider);
-
-        // Upload image to Firebase Storage if one was selected
-        String mediaUrl = '';
-        if (_selectedMediaFile != null) {
-          _showSuccess('Uploading image...');
-          final url = await _storageService.uploadReportImage(_selectedMediaFile!);
-          if (url != null) {
-            mediaUrl = url;
-          } else {
-            _showSuccess('Image upload failed, submitting text only');
-          }
-        }
-
         final response = await api.createReport(
           rawText: _descriptionController.text,
           mediaType: _selectedMediaFile != null ? 'image' : 'text',
-          mediaUrl: mediaUrl,
+          mediaUrl: mediaBase64,
           latitude: _defaultLat,
           longitude: _defaultLng,
         );
         _showSuccess('Report submitted! ID: ${response['id']}');
       } catch (e) {
-        // If API call fails, queue it offline
         debugPrint('API ERROR: $e');
         await _connectivityService.queueReport(reportData);
         setState(() => _pendingSync = _connectivityService.pendingCount);
@@ -109,6 +114,7 @@ class _FieldDashboardState extends ConsumerState<FieldDashboard> {
     setState(() {
       _selectedMediaPath = null;
       _selectedMediaFile = null;
+      _selectedImageBytes = null;
       _isSubmitting = false;
     });
   }
@@ -200,7 +206,7 @@ class _FieldDashboardState extends ConsumerState<FieldDashboard> {
             ),
             const SizedBox(height: 24),
 
-            Text('New Report', style: theme.textTheme.titleLarge),
+            Text('New Report (V2 - Base64)', style: theme.textTheme.titleLarge),
             const SizedBox(height: 16),
 
             // Photo capture
@@ -218,12 +224,13 @@ class _FieldDashboardState extends ConsumerState<FieldDashboard> {
                     strokeAlign: BorderSide.strokeAlignInside,
                   ),
                 ),
-                child: _selectedMediaPath != null
+                child: _selectedImageBytes != null
                     ? ClipRRect(
                         borderRadius: BorderRadius.circular(14),
-                        child: Image.network(
-                          _selectedMediaPath!,
+                        child: Image.memory(
+                          _selectedImageBytes!,
                           fit: BoxFit.cover,
+                          width: double.infinity,
                           errorBuilder: (_, __, ___) => const Center(
                             child: Icon(Icons.broken_image, size: 48),
                           ),
